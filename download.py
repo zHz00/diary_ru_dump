@@ -138,7 +138,7 @@ for offset in range(3760, 3800, 20):
         for i in posts_tags[x]:
             out_page.find("body").append(BeautifulSoup("[["+i+"]] <br />", 'html.parser'))
 
-        out_page.find("body").append(BeautifulSoup("[[p"+posts_ids[x]+"]] <br />", 'html.parser'))
+        out_page.find("body").append(BeautifulSoup("ID: p"+posts_ids[x]+"]] <br />", 'html.parser'))
 
         out_post=open("dump\\p"+posts_ids[x]+".htm","w",encoding="utf-8")
         out_post.write(out_page.prettify())
