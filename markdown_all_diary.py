@@ -83,13 +83,13 @@ ids=[]
 for i in file_list_out:
     i_trim=i.strip()
     i_meta=i[:-5]+".txt"
-    print("Processing:"+i_trim)
+    #print("Processing:"+i_trim)
     f_meta=open(i_meta,encoding="utf-8")
     meta=f_meta.readlines()
 
     #сохраним содержимое
 
-    out_name_file_base=re.sub(r'[\\/*?:"<>|]',"",meta[4].strip())
+    out_name_file_base=re.sub(r'[\\/*?:"<>|]',"",meta[4]).strip()
     out_name_file=out_name_file_base
     out_name_folder=base_folder
     out_name=out_name_folder+out_name_file+".md"
@@ -111,7 +111,7 @@ for i in file_list_out:
     contents=f.read().replace("\n","").replace("\r","")
     
     #добываем ссылки и картинки
-    bs=BeautifulSoup(contents)
+    bs=BeautifulSoup(contents,"html.parser")
     for pic in bs.find_all("img"):
         pic1={}
         pic1['id']=meta[0].strip()

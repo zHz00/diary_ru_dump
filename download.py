@@ -26,7 +26,7 @@ def convert_date(date):
     date = date.split()
     return date[3] + '-' + month_convertor[date[2]] + '-' + date[1]
 
-for offset in range(3760, 3800, 20):
+for offset in range(3760, 3820, 20):
     #page = requests.get('http://zhz00.diary.ru/?oam&from=' + str(offset))"""
     page_url='https://diary.ru/~zHz00?oam&rfrom='+str(offset)
     print("Downloading "+page_url+"...")
@@ -138,7 +138,7 @@ for offset in range(3760, 3800, 20):
         for i in posts_tags[x]:
             out_page.find("body").append(BeautifulSoup("[["+i+"]] <br />", 'html.parser'))
 
-        out_page.find("body").append(BeautifulSoup("ID: p"+posts_ids[x]+"]] <br />", 'html.parser'))
+        out_page.find("body").append(BeautifulSoup("ID: p"+posts_ids[x]+"<br />", 'html.parser'))
 
         out_post=open("dump\\p"+posts_ids[x]+".htm","w",encoding="utf-8")
         out_post.write(out_page.prettify())
