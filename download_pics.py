@@ -1,16 +1,15 @@
 import requests
-import pandas as pd
 from bs4 import BeautifulSoup
 import time
 import re
 import os
 from urllib.parse import urlparse
 from pathlib import Path
+import settings as s
 
-base_folder="diary_zhz_obsidian\\"
-pic_folder=base_folder+"pics\\"
 
-pic_list_file=open(base_folder+"pics.txt","r",encoding="utf-8")
+
+pic_list_file=open(s.base_folder+s.pics_file,"r",encoding=s.pics_file_encoding)
 pics_list_text=pic_list_file.readlines()
 
 phase=0
@@ -40,7 +39,7 @@ for i in pics_list_text:
         pic_names.add(pic_name)
 
 
-    pic_full_name=pic_folder+pic_name
+    pic_full_name=s.base_folder+s.pics_folder+pic_name
     if(Path(pic_full_name).is_file()):
         print(pic_url+" already downloaded. Skipping...")
         continue
@@ -49,11 +48,13 @@ for i in pics_list_text:
         pic=requests.get(pic_url,verify=False)
     except:
         print("Error during downloading! Skipping...")
-        open(pic_folder+pic_name,"wb").close()
+        open(s.base_folder+s.pics_folder+pic_name,"wb").close()
         continue
     print(f"Done. Size={len(pic.content)}")
-    out_pic=open(pic_folder+pic_name,"wb")
+    out_pic=open(s.base_folder+s.pics_folder+pic_name,"wb")
     out_pic.write(pic.content)
     out_pic.close()
     print("Done saving. Waiting for 1 minute...")
-    time.sleep(60)
+    time.sleep(s.wait_time)
+
+    print("End (download_pics)")

@@ -6,37 +6,33 @@ import re
 import os
 from urllib.parse import urlparse
 from pathlib import Path
+import settings as s
 
 def post_replace(file_name,str_from,str_to):
-    post_r=open(file_name,"r",encoding="utf-8")
+    post_r=open(file_name,"r",encoding=s.post_encoding)
     post_contents=post_r.read()
     post_r.close()
     post_contents=post_contents.replace(str_from,str_to)
 
-    post_w=open(file_name,"w",encoding="utf-8")
+    post_w=open(file_name,"w",encoding=s.post_encoding)
     post_w.write(post_contents)
     post_w.close()
 
-base_folder="diary_zhz_obsidian\\"
-pics_folder="pics/"
 
-pics_list_file=open(base_folder+"pics.txt","r",encoding="utf-8")
+pics_list_file=open(s.base_folder+s.pics_file,"r",encoding=s.pics_file_encoding)
 pics_list_text=pics_list_file.readlines()
 
-links_list_file=open(base_folder+"links.txt","r",encoding="utf-8")
+links_list_file=open(s.base_folder+s.links_file,"r",encoding=s.links_file_encoding)
 links_list_text=links_list_file.readlines()
 
 def strip_post_id(url):
-    id_begin_raw1=url.find("00/p")
-    id_begin_raw2=url.find("00.diary.ru/p")
-    if(id_begin_raw1==-1 and id_begin_raw2==-1):
-        return "-1"
-    if(id_begin_raw1==-1):
-        id_begin=id_begin_raw2+13
-    else:
-        id_begin=id_begin_raw1+4
-    return url[id_begin:id_begin+9]
-
+    for link_mark in s.link_marks:
+        id_begin_raw=url.find(link_mark)
+        if(id_begin_raw==-1):
+            continue
+        id_begin=id_begin_raw+len(link_mark)
+        return url[id_begin:id_begin+s.post_id_len]
+    return "-1"
 
 phase=0
 
@@ -51,7 +47,7 @@ for i in pics_list_text:
     pic_url=i.strip()
     pic_name=os.path.basename(urlparse(i).path).strip()
 
-    post_replace(base_folder+post_name+".md",pic_url,pics_folder+pic_name)
+    post_replace(s.base_folder+post_name+".md",pic_url,s.pics_folder+pic_name)
 
 links=[]
 link={}
@@ -70,8 +66,7 @@ for i in links_list_text:
         link={}
 
 for link_src in links:
-    if link_src['name']=="Желания в NetHack (часть 12)":
-        dummy=0
+
     id_dest=strip_post_id(link_src['url'])
     if id_dest==link_src['id']:
         continue
@@ -81,7 +76,7 @@ for link_src in links:
             #нашли целевой файл
             found=True
             print(f"Replacing {link_src['url']} to {link_dest['name']}")
-            post_replace(base_folder+link_src["name"]+".md",link_src['url'],(link_dest['name'].replace(" ","%20")))
+            post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],(link_dest['name'].replace(" ","%20")))
             break
             #т.к. уже нашли дальше неча смотреть
     if not found:
@@ -89,4 +84,4 @@ for link_src in links:
 
 
 
-print("end (replace_urls)")
+print("End (replace_urls)")

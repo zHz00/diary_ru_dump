@@ -1,12 +1,10 @@
 #download diary
 
 import requests
-import pandas as pd
 from bs4 import BeautifulSoup
 import time
 import re
-
-df = pd.DataFrame([],columns=['postId', 'date', 'comments', 'full_version', 'tags', 'symbol_count', 'words_count', 'images'])
+import settings as s
 
 def convert_date(date):
     month_convertor = {
@@ -26,12 +24,10 @@ def convert_date(date):
     date = date.split()
     return date[3] + '-' + month_convertor[date[2]] + '-' + date[1]
 
-for offset in range(3760, 3820, 20):
-    #page = requests.get('http://zhz00.diary.ru/?oam&from=' + str(offset))"""
-    page_url='https://diary.ru/~zHz00?oam&rfrom='+str(offset)
+for offset in range(s.start, s.stop, 20):
+    page_url=s.diary_url+str(offset)
     print("Downloading "+page_url+"...")
     page = requests.get(page_url)
-    #page=open("test2.htm",encoding="utf-8").read()
     page = BeautifulSoup(page.text, 'html.parser')
     posts_titles=[]
     posts_links=[]
@@ -58,7 +54,7 @@ for offset in range(3760, 3820, 20):
                     posts_dates_s.append(posts_dates_s[-1])
                     posts_dates.append(posts_dates[-1])
                 posts_links.append(i.a["href"])
-                id_begin=i.a["href"].find("00/p")+4
+                id_begin=i.a["href"].find(s.link_mark)+len(s.link_mark)
                 posts_ids.append(i.a["href"][id_begin:id_begin+9])
                 posts_times_s.append(i.span.contents[0])
                 if len(i.a.contents)>0:
@@ -101,7 +97,7 @@ for offset in range(3760, 3820, 20):
     for x in range(len(posts_ids)):
         #метаданные собираем в отдельный файл
 
-        out_meta=open("dump\\p"+posts_ids[x]+".txt","w",encoding="utf-8")
+        out_meta=open(s.dump_folder+"p"+posts_ids[x]+".txt","w",encoding=s.post_encoding)
         out_meta.write(f"{posts_ids[x]}\n")
         out_meta.write(f"{posts_links[x]}\n")
         out_meta.write(f"{posts_dates[x]}\n")
@@ -114,7 +110,6 @@ for offset in range(3760, 3820, 20):
 
         out_page=BeautifulSoup(fish,"html.parser")
 
-        #out_page.find("title").string=posts_titles[x]
         title_header=BeautifulSoup("<h1></h1>", 'html.parser')
         title_header.find("h1").string=posts_titles[x]
         out_page.find("body").append(title_header)
@@ -140,12 +135,12 @@ for offset in range(3760, 3820, 20):
 
         out_page.find("body").append(BeautifulSoup("ID: p"+posts_ids[x]+"<br />", 'html.parser'))
 
-        out_post=open("dump\\p"+posts_ids[x]+".htm","w",encoding="utf-8")
+        out_post=open(s.dump_folder+"p"+posts_ids[x]+".htm","w",encoding=s.post_encoding)
         out_post.write(out_page.prettify())
         out_post.close()
 
     print("Done saving. Waiting for 1 minute...")
-    time.sleep(60)
+    time.sleep(s.wait_time)
 
 
 
