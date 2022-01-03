@@ -16,9 +16,9 @@ stop=160
 
 wait_time=60 #sec
 
-base_folder="diary_zhz_obsidian/"
-pics_folder="pics/"
-dump_folder="dump\\"
+base_folder="../diary_zhz_obsidian/"
+pics_folder="../pics/"
+dump_folder="../dump\\"
 
 pics_file="pics.txt"
 links_file="links.txt"
