@@ -36,32 +36,39 @@ def strip_post_id(url):
 
 phase=0
 
-for i in pics_list_text:
+#первую строчку пропускаем, там не то
+#вторую строчку запоминаем
+#третью используем
+
+for line in pics_list_text:
     phase+=1
     if phase%3==1:
         continue
     if phase%3==2:
-        post_name=i.strip()
+        post_name=line.strip()
         continue
     #теперь у нас есть урл
-    pic_url=i.strip()
-    pic_name=os.path.basename(urlparse(i).path).strip()
+    pic_url=line.strip()
+    pic_name=os.path.basename(urlparse(line.strip()).path).strip()
 
     post_replace(s.base_folder+post_name+".md",pic_url,s.pics_folder+pic_name)
 
 links=[]
 link={}
+not_found=[]
 
 #прочтём список ссылок
 
-for i in links_list_text:
+phase=0
+
+for line in links_list_text:
     phase+=1
     if phase%3==1:
-        link['id']=i.strip()
+        link['id']=line.strip()
     if phase%3==2:
-        link['name']=i.strip()
+        link['name']=line.strip()
     if phase%3==0:
-        link['url']=i.strip()
+        link['url']=line.strip()
         links.append(link)
         link={}
 
@@ -71,17 +78,34 @@ for link_src in links:
     if id_dest==link_src['id']:
         continue
     found=False
-    for link_dest in links:
-        if link_dest['id']==id_dest:
-            #нашли целевой файл
-            found=True
-            print(f"Replacing {link_src['url']} to {link_dest['name']}")
-            post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],(link_dest['name'].replace(" ","%20")))
-            break
-            #т.к. уже нашли дальше неча смотреть
-    if not found:
-        print("WARNING! Destination post not found: "+link_src['id']+ "; url: "+link_src['url'])
+    link_is_pic=False
+    for test_str in s.pic_checking:
+        if link_src['url'].strip().lower().endswith(test_str)!=False:
+            link_is_pic=True
+    if link_is_pic:
+        link_dest=s.pics_folder+os.path.basename(urlparse(link_src['url'].strip()).path).strip()
+        print(f"Replacing {link_src['url']} to {link_dest}")
+        post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],link_dest.replace(" ","%20"))        
+    else:
+        #обрабатываем перекрёстные ссылки
+        for link_dest in links:
+            if link_dest['id']==id_dest:
+                #нашли целевой файл
+                found=True
+                print(f"Replacing {link_src['url']} to {link_dest['name']}")
+                post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],(link_dest['name'].replace(" ","%20")))
+                break
+                #т.к. уже нашли дальше неча смотреть
+
+        #а тут обрабатываем ссылки на изображения
+
+        if not found:
+            warning="WARNING! Destination post not found: "+link_src['id']+ "; url: "+link_src['url']
+            not_found.append(warning)
+            print(warning)
 
 
-
+print("Absent links (one more time):")
+for message in not_found:
+    print(message)
 print("End (replace_urls)")

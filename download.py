@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import re
+
+from requests.sessions import RequestsCookieJar
 import settings as s
 
 def convert_date(date):
@@ -24,10 +26,15 @@ def convert_date(date):
     date = date.split()
     return date[3] + '-' + month_convertor[date[2]] + '-' + date[1]
 
+cookies=RequestsCookieJar()
+for c_name,c_value in s.saved_cookies.items():
+    cookie=requests.cookies.create_cookie(domain="diary.ru",name=c_name,value=c_value)
+    cookies.set_cookie(cookie)
+
 for offset in range(s.start, s.stop, 20):
     page_url=s.diary_url+str(offset)
     print("Downloading "+page_url+"...")
-    page = requests.get(page_url)
+    page = requests.get(page_url,cookies=cookies)
     page = BeautifulSoup(page.text, 'html.parser')
     posts_titles=[]
     posts_links=[]
@@ -43,37 +50,37 @@ for offset in range(s.start, s.stop, 20):
     #разбор данных на метаданные
 
     posts_divs=page.find_all("div")
-    for i in posts_divs:
-        if i.has_attr("class") and len(i["class"])>0:
-            class_name=i["class"][0]
+    for div in posts_divs:
+        if div.has_attr("class") and len(div["class"])>0:
+            class_name=div["class"][0]
             if class_name =="day-header":
-                posts_dates_s.append(i.span.contents[0])
-                posts_dates.append(convert_date(i.span.contents[0]))
+                posts_dates_s.append(div.span.contents[0])
+                posts_dates.append(convert_date(div.span.contents[0]))
             if class_name =="post-header":
                 if len(posts_dates_s)!=len(posts_links)+1:#если для текущей записи не нашлось даты из-за двух записей в течение дня
                     posts_dates_s.append(posts_dates_s[-1])
                     posts_dates.append(posts_dates[-1])
-                posts_links.append(i.a["href"])
-                id_begin=i.a["href"].find(s.link_mark)+len(s.link_mark)
-                posts_ids.append(i.a["href"][id_begin:id_begin+9])
-                posts_times_s.append(i.span.contents[0])
-                if len(i.a.contents)>0:
-                    posts_titles.append(i.a.contents[0])
+                posts_links.append(div.a["href"])
+                id_begin=div.a["href"].find(s.link_marks[0])+len(s.link_marks[0])
+                posts_ids.append(div.a["href"][id_begin:id_begin+9])
+                posts_times_s.append(div.span.contents[0])
+                if len(div.a.contents)>0:
+                    posts_titles.append(div.a.contents[0])
                 else:
                    posts_titles.append("(no title)")
                 print(f"Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
             if class_name =="post-inner":
-                posts_contents.append(i.prettify().replace('\r', '').replace('\n', ''))
+                posts_contents.append(div.prettify().replace('\r', '').replace('\n', ''))
             if class_name == "post-content":
                 tags=[]
                 post_tags=[]
-                posts_ps=i.find_all("p")
-                for j in posts_ps:
-                    if j.has_attr("class"):
-                        if j["class"][0]=="tags":
-                            tags=j.find_all("a")
-                            for k in tags:
-                                post_tags.append(k.contents[0])
+                posts_ps=div.find_all("p")
+                for p in posts_ps:# тег <p>
+                    if p.has_attr("class"):
+                        if p["class"][0]=="tags":
+                            tags=p.find_all("a")
+                            for tag in tags:
+                                post_tags.append(tag.contents[0])
                 if len(post_tags)==0:#бывают посты без тегов. чтобы их отловить, мы ищем блок с тегами ТОЛЬКО внутри текущего дива. если его нет, ставим специальный тег, что тегов нет
                     post_tags.append("None")
                 posts_tags.append(post_tags)
@@ -103,8 +110,8 @@ for offset in range(s.start, s.stop, 20):
         out_meta.write(f"{posts_dates[x]}\n")
         out_meta.write(f"{posts_times_s[x]}\n")
         out_meta.write(f"{posts_titles[x]}\n")
-        for i in posts_tags[x]:
-            out_meta.write(f"{i} ")
+        for tag in posts_tags[x]:
+            out_meta.write(f"{tag}\n")
         out_meta.write("\n")
         out_meta.close()
 
@@ -130,8 +137,8 @@ for offset in range(s.start, s.stop, 20):
 
         out_page.find("body").append(BeautifulSoup("<br />Теги:<br />", 'html.parser'))
 
-        for i in posts_tags[x]:
-            out_page.find("body").append(BeautifulSoup("[["+i+"]] <br />", 'html.parser'))
+        for tag in posts_tags[x]:
+            out_page.find("body").append(BeautifulSoup("[["+re.sub(r'[\\/*?:"<>|]',"",tag).strip()+"]] <br />", 'html.parser'))
 
         out_page.find("body").append(BeautifulSoup("ID: p"+posts_ids[x]+"<br />", 'html.parser'))
 
@@ -139,10 +146,10 @@ for offset in range(s.start, s.stop, 20):
         out_post.write(out_page.prettify())
         out_post.close()
 
-    print("Done saving. Waiting for 1 minute...")
+    print(f"Done saving. Waiting for {s.wait_time} sec...")
     time.sleep(s.wait_time)
 
 
 
 
-print("end (dump)")
+print(f"end (dump). Downloadaed {len(posts_ids)} posts.")
