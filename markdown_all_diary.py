@@ -130,7 +130,8 @@ for post in file_list_out:
     
 
 
-    f_out=open(out_name,"w",encoding=s.post_encoding,errors="ignore")
+    #линуксовые концы строк т.к. обсидиан всё равно их заменит
+    f_out=open(out_name,"w",encoding=s.post_encoding,errors="ignore",newline='\n')
     f_out.write(markdownify(contents).strip())
     f_out.close()
     f.close()

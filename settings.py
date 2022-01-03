@@ -1,23 +1,43 @@
-diary_url='https://diary.ru/~zHz00?oam&rfrom='
+#Замените в следующей настройке мой ник на необходимый
+#diary_url='https://diary.ru/~zHz00?oam&rfrom='
+diary_url='https://zhz00.diary.ru/?tag=33243&n=t&page='
+
+# 0 -- режим постов -- 20, 40, 60 и т.п.
+# 1 -- режим страниц, если скачиваем по тегу, 1, 2, 3 и т.п.
+diary_url_mode=1
+
+
+#Тут надо придумать шаблон для поиска номеров постов. Если не знаете, что делать, замените "00" на необходимый ник.
 link_marks=["00/p","00.diary.ru/p"]
+#Не менять.
 post_id_len=9
 
+#Аналогично, заменяем мой ник на необходимый.
 cross_link_checking=["zHz00.diary.ru/","/~zHz00/","zhz00.diary.ru/","/~zhz00/"]
+#Не трогать.
 pic_checking=[".jpg",".jpeg",".png",".gif"]
 
-saved_cookies={'_csrf':'-',
-'_session':'-',
-'_identity':'-'}
+#Для открытых дневников задайте все три ключа как пустые строки. Для закрытых возьмите значения кукисов из своего браузера.
+saved_cookies={'_csrf':'',
+'_session':'',
+'_identity_':''}
+
+if len(saved_cookies['_csrf'])<2:
+    links_style=0
+else:
+    links_style=1
 
 
+#Диапазон страниц. Минимальный, как правило, 20, при этом первый пост может не попасть в список. Максимальный можно вычислить, зайдя на дневник и посмотрев адреса первой страницы
+#Например, при адресе первой страницы https://zhz00.diary.ru/?rfrom=3840 надо выставлять номер 3860, т.е. на 20 больше
+start=1
+stop=2
 
-start=120
-stop=160
-
+#На ваш выбор.
 wait_time=60 #sec
 
 base_folder="../diary_zhz_obsidian/"
-pics_folder="../pics/"
+pics_folder="pics/"
 dump_folder="../dump\\"
 
 pics_file="pics.txt"

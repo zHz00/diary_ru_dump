@@ -31,10 +31,21 @@ for c_name,c_value in s.saved_cookies.items():
     cookie=requests.cookies.create_cookie(domain="diary.ru",name=c_name,value=c_value)
     cookies.set_cookie(cookie)
 
-for offset in range(s.start, s.stop, 20):
+if s.diary_url_mode==0:
+    step=20
+if s.diary_url_mode==1:
+    step=1
+    
+for offset in range(s.start, s.stop, step):
     page_url=s.diary_url+str(offset)
     print("Downloading "+page_url+"...")
     page = requests.get(page_url,cookies=cookies)
+
+    # тестирование, работают куки или нет. отключено
+    #testpage=open("testpage.htm","w")
+    #testpage.write(page.text)
+    #testpage.close()
+
     page = BeautifulSoup(page.text, 'html.parser')
     posts_titles=[]
     posts_links=[]
@@ -61,7 +72,7 @@ for offset in range(s.start, s.stop, 20):
                     posts_dates_s.append(posts_dates_s[-1])
                     posts_dates.append(posts_dates[-1])
                 posts_links.append(div.a["href"])
-                id_begin=div.a["href"].find(s.link_marks[0])+len(s.link_marks[0])
+                id_begin=div.a["href"].find(s.link_marks[s.links_style])+len(s.link_marks[s.links_style])
                 posts_ids.append(div.a["href"][id_begin:id_begin+9])
                 posts_times_s.append(div.span.contents[0])
                 if len(div.a.contents)>0:
