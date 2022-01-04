@@ -1,5 +1,4 @@
 import requests
-import pandas as pd
 from bs4 import BeautifulSoup
 import time
 import re
@@ -14,13 +13,16 @@ def post_replace(file_name,str_from,str_to):
     post_r.close()
     post_contents=post_contents.replace(str_from,str_to)
 
-    post_w=open(file_name,"w",encoding=s.post_encoding)
+    post_w=open(file_name,"w",encoding=s.post_encoding,newline='\n')
     post_w.write(post_contents)
     post_w.close()
 
 
-pics_list_file=open(s.base_folder+s.pics_file,"r",encoding=s.pics_file_encoding)
-pics_list_text=pics_list_file.readlines()
+if s.download_pics==True:
+    pics_list_file=open(s.base_folder+s.pics_file,"r",encoding=s.pics_file_encoding)
+    pics_list_text=pics_list_file.readlines()
+else:
+    pics_list_text=[]
 
 links_list_file=open(s.base_folder+s.links_file,"r",encoding=s.links_file_encoding)
 links_list_text=links_list_file.readlines()
@@ -82,7 +84,7 @@ for link_src in links:
     for test_str in s.pic_checking:
         if link_src['url'].strip().lower().endswith(test_str)!=False:
             link_is_pic=True
-    if link_is_pic:
+    if link_is_pic and s.download_pics==True:
         link_dest=s.pics_folder+os.path.basename(urlparse(link_src['url'].strip()).path).strip()
         print(f"Replacing {link_src['url']} to {link_dest}")
         post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],link_dest.replace(" ","%20"))        
