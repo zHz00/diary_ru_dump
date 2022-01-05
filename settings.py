@@ -40,13 +40,14 @@ stop=3860
 wait_time=60 #sec
 
 #Тут надо задать название блокнота для Obsidian -- и вручную создать нужную папку
-base_folder="../diary_zhz_obsidian/"
+base_folder="../zhz_diary_obsidian/"
+#base_folder="../zhz_diary_obsidian_nopics/"
 pics_folder="pics/"
 dump_folder="../dump\\"
 #Сначала создаём рабочую папку, допустим, c:\diary .
 #Обращаю внимание, что все папки должны быть созданы вручную, структура должна быть следующая:
-#c:\diary\diary_zhz_obsidian <- тут будут сами посты в формате .md
-#c:\diary\diary_zhz_obsidian\pics <- тут будут картинки
+#c:\diary\zhz_diary_obsidian <- тут будут сами посты в формате .md
+#c:\diary\zhz_diary_obsidian\pics <- тут будут картинки
 #c:\diary\scripts <- сюда сложить питоновские файлы
 #c:\diary\dump <- тут будут метаданные постов и посты в формате html
 
