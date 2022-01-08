@@ -39,7 +39,7 @@ stop=3860
 #На ваш выбор.
 wait_time=60 #sec
 
-#Тут надо задать название блокнота для Obsidian -- и вручную создать нужную папку
+#Тут надо задать название блокнота для Obsidian
 base_folder="../zhz_diary_obsidian/"
 #base_folder="../zhz_diary_obsidian_nopics/"
 pics_folder="pics/"
@@ -47,13 +47,15 @@ dump_folder="../dump\\"
 indexes_folder="indexes/"
 days_folder="days/"
 tags_folder="tags/"
-#Сначала создаём рабочую папку, допустим, c:\diary .
-#Обращаю внимание, что все папки должны быть созданы вручную, структура должна быть следующая:
+
+#Если скрипты распакованы в папку c:\diary\scripts\, то структура будет такой:
 #c:\diary\zhz_diary_obsidian <- тут будут сами посты в формате .md
 #c:\diary\zhz_diary_obsidian\pics <- тут будут картинки
 #c:\diary\zhz_diary_obsidian\indexes <- тут будет список постов, канедарь и список тегов
+#c:\diary\zhz_diary_obsidian\indexes\days <- тут будут вспомогательные файлы для календаря; если в какой-либо день создано несколько постов, то для этого дня генерируется отдельный список, который будет размещён в этой папке
+#c:\diary\zhz_diary_obsidian\tags <- тут будут лежать файлы с тегами, и со списками постов по каждому тегу
 #c:\diary\scripts <- сюда сложить питоновские файлы
-#c:\diary\dump <- тут будут метаданные постов и посты в формате html
+#c:\diary\dump <- тут будут метаданные постов и "сырые" посты в формате html
 
 pics_file="pics.txt"
 links_file="links.txt"
