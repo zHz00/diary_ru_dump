@@ -48,7 +48,7 @@ for post in file_list_out:
     for tag in tags:
         if len(tag.strip())==0:#у нас последняя строчка пустая. ну и на случай если другие пустые будут
             continue
-        tag_name=s.base_folder+re.sub(r'[\\/*?:"<>|]',"",tag.strip())+".md"
+        tag_name=s.base_folder+s.tags_folder+re.sub(r'[\\/*?:"<>|]',"",tag.strip())+".md"
         test_path=Path(tag_name)
         if not test_path.is_file():
             tag_file=open(tag_name,"w",encoding=s.post_encoding)
@@ -77,15 +77,18 @@ for post in file_list_out:
     if len(out_name_file_base)==0:
         out_name_file_base="[NOT PRINTABLE]"
     out_name_file=out_name_file_base
-    out_name_folder=s.base_folder
-    out_name=out_name_folder+out_name_file+".md"
+    out_name=s.base_folder+out_name_file+".md"
+    out_name_as_tag=s.base_folder+s.tags_folder+out_name_file+".md"
     test_path=Path(out_name)
+    test_path_as_tag=Path(out_name_as_tag)
     append_num=0
-    while test_path.is_file():
+    while test_path.is_file() or test_path_as_tag.is_file():
         print("File "+out_name+" exists! Renaming...")
         out_name_file=out_name_file_base+"["+str(append_num)+"]"
-        out_name=out_name_folder+out_name_file+".md"
+        out_name=s.base_folder+out_name_file+".md"
+        out_name_as_tag=s.base_folder+s.tags_folder+out_name_file+".md"
         test_path=Path(out_name)
+        test_path_as_tag=Path(out_name_as_tag)
         append_num+=1
         renamed_count+=1
 

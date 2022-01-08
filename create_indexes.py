@@ -5,6 +5,7 @@ import os
 import settings as s
 from win32_setctime import setctime
 import init
+import re
 
 init.create_folders()
 
@@ -25,9 +26,10 @@ for post_file_name in file_list:
     if len(post_contents)<5:
         continue #это не настоящий пост а какая-то ерунда
     post_date=post_contents[4].strip()
+    post_id=post_contents[-1].strip()[4:]
     post_file.close()
     post_time=time.mktime(datetime.datetime.strptime(post_date,"%Y-%m-%d, %H:%M").timetuple())
-    post_list.append((post_time,os.path.splitext(os.path.basename(post_file_name.strip()))[0]))
+    post_list.append((post_time,os.path.splitext(os.path.basename(post_file_name.strip()))[0],post_id))
     counter+=1
 
 post_list.sort(key=lambda pdt:pdt[0])
@@ -164,6 +166,54 @@ print(f"End create_indexes: calendar. No posts days:{days_with_no_posts}, 1 post
 
 # III. Теперь сделаем список тегов
 
-# это пока не сделано
+def find_key(voc,key):
+    if key in voc:
+        return key
+    for actual_key in voc.keys():
+        ak_lwr=actual_key.lower()
+        k_lwr=key.lower()
+        if ak_lwr==k_lwr:
+            return actual_key
+    raise KeyError
 
-print(f"End create_indexes: tags.")
+tags_files=os.listdir(s.base_folder+s.tags_folder)
+tags_list={}
+for tag in tags_files:
+    tags_list[os.path.splitext(tag)[0]]=[]#подготовим списки постов с каждым тегом
+for post in post_list:
+    post_id=post[2]
+    post_meta=s.dump_folder+post[2]+".txt"
+    f_meta=open(post_meta,"r",encoding=s.post_encoding)
+    meta=f_meta.readlines()
+
+    #оттуда проще прочитать теги, чем парсить
+
+    tags=meta[5:]
+    for tag in tags:
+        if len(tag.strip())==0:#у нас последняя строчка пустая. ну и на случай если другие пустые будут
+            continue
+        tag_safe_name=re.sub(r'[\\/*?:"<>|]',"",tag.strip())
+        tags_list[find_key(tags_list,tag_safe_name)].append(post)
+#теперь у нас в словаре тегов для каждого тега есть список постов с его участием
+
+common_tag_list_file=open(s.base_folder+s.indexes_folder+s.tags_file_name,"w",encoding=s.post_encoding,newline="\n")
+common_tag_list_file.write("| Тег | N |\n| --- | --- |\n")
+
+for tag,tag_post_list in tags_list.items():
+    print("Processing tag: "+tag)
+    tag_file_name=s.base_folder+s.tags_folder+tag+".md"
+    tag_file=open(tag_file_name,"w",encoding=s.post_encoding,newline="\n")
+    tag_file.write("## Тег: "+tag+"\n")
+    tag_file.write("#Теги\n\n")
+    tag_file.write("| Дата | Заголовок |\n| --- | --- |\n")
+    tag_post_list.sort(key=lambda pdt:pdt[0])
+    for post in tag_post_list:
+        time_s=datetime.datetime.fromtimestamp(post[0]).strftime("%Y&#8209;%m&#8209;%d")
+        tag_file.write(f"| {time_s} | [[{post[1]}\|{post[1]}]] |\n")
+    tag_file.close()
+
+    common_tag_list_file.write(f"| [[{tag}\|{tag}]] | {len(tag_post_list)} |\n")
+
+common_tag_list_file.close()
+
+print(f"End create_indexes: tags. Tags precessed: {len(tags_list)}")
