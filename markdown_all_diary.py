@@ -7,6 +7,9 @@ from pathlib import Path
 import re
 from bs4 import BeautifulSoup
 import settings as s
+import init
+
+init.create_folders()
 
 file_list=listdir(s.dump_folder)
 
@@ -108,6 +111,8 @@ for post in file_list_out:
             continue
         link_is_cross_link=False
         link_is_pic=False
+        if re.search(r'[\[\]\^\#\|]',link.contents[0]):
+            print(f"Warning! \"a\" tag has forbidden characters: {link.contents}")
         for test_str in s.cross_link_checking:
             if link['href'].find(test_str)!=-1:
                 link_is_cross_link=True

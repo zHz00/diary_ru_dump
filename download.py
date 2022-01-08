@@ -8,6 +8,10 @@ import re
 from requests.sessions import RequestsCookieJar
 import settings as s
 
+import init
+
+init.create_folders()
+
 def convert_date(date):
     month_convertor = {
         'января' : '01',

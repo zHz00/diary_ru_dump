@@ -6,6 +6,9 @@ import os
 from urllib.parse import urlparse
 from pathlib import Path
 import settings as s
+import init
+
+init.create_folders()
 
 
 

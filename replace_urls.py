@@ -6,6 +6,9 @@ import os
 from urllib.parse import urlparse
 from pathlib import Path
 import settings as s
+import init
+
+init.create_folders()
 
 def post_replace(file_name,str_from,str_to):
     post_r=open(file_name,"r",encoding=s.post_encoding)
@@ -95,7 +98,14 @@ for link_src in links:
                 #нашли целевой файл
                 found=True
                 print(f"Replacing {link_src['url']} to {link_dest['name']}")
-                post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],(link_dest['name'].replace(" ","%20")))
+                if re.search(r'[\[\]\^\#\|]',link_dest['name']):
+                    warning=f"Attention! Special character in dest name! {link_dest['name']}"
+                    print(warning)
+                    not_found.append(warning)
+                    post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],(link_dest['name'].replace(" ","%20")))
+                    #post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],("[["+link_dest['name'].replace(" ","%20")+"\|"+link_dest['name'].replace(" ","%20")+"]]"))
+                else:
+                    post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],(link_dest['name'].replace(" ","%20")))
                 break
                 #т.к. уже нашли дальше неча смотреть
 

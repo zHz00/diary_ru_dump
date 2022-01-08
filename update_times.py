@@ -3,6 +3,9 @@ import datetime
 import os
 import settings as s
 from win32_setctime import setctime
+import init
+
+init.create_folders()
 
 file_list=os.listdir(s.base_folder)
 

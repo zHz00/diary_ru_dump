@@ -44,15 +44,24 @@ base_folder="../zhz_diary_obsidian/"
 #base_folder="../zhz_diary_obsidian_nopics/"
 pics_folder="pics/"
 dump_folder="../dump\\"
+indexes_folder="indexes/"
+days_folder="days/"
+tags_folder="tags/"
 #Сначала создаём рабочую папку, допустим, c:\diary .
 #Обращаю внимание, что все папки должны быть созданы вручную, структура должна быть следующая:
 #c:\diary\zhz_diary_obsidian <- тут будут сами посты в формате .md
 #c:\diary\zhz_diary_obsidian\pics <- тут будут картинки
+#c:\diary\zhz_diary_obsidian\indexes <- тут будет список постов, канедарь и список тегов
 #c:\diary\scripts <- сюда сложить питоновские файлы
 #c:\diary\dump <- тут будут метаданные постов и посты в формате html
 
 pics_file="pics.txt"
 links_file="links.txt"
+
+list_file_name="Список.md"
+calendar_file_name="Календарь.md"
+tags_file_name="Теги.md"
+day_list_prefix="AT"
 
 pics_file_encoding="utf-8"
 links_file_encoding="utf-8"
