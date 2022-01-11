@@ -12,8 +12,6 @@ download_pics=True
 
 #Тут надо придумать шаблон для поиска номеров постов. Если не знаете, что делать, замените "00" на необходимый ник.
 link_marks=["00/p","00.diary.ru/p"]
-#Не менять.
-post_id_len=9
 
 #Аналогично, заменяем мой ник на необходимый.
 cross_link_checking=["zHz00.diary.ru/","/~zHz00/","zhz00.diary.ru/","/~zhz00/"]
@@ -47,6 +45,8 @@ dump_folder="../dump\\"
 indexes_folder="indexes/"
 days_folder="days/"
 tags_folder="tags/"
+obsidian_settings_folder=".obsidian/"
+obsidian_default_settings_folder="default_obsidian_config/"
 
 #Если скрипты распакованы в папку c:\diary\scripts\, то структура будет такой:
 #c:\diary\zhz_diary_obsidian <- тут будут сами посты в формате .md
@@ -54,6 +54,7 @@ tags_folder="tags/"
 #c:\diary\zhz_diary_obsidian\indexes <- тут будет список постов, канедарь и список тегов
 #c:\diary\zhz_diary_obsidian\indexes\days <- тут будут вспомогательные файлы для календаря; если в какой-либо день создано несколько постов, то для этого дня генерируется отдельный список, который будет размещён в этой папке
 #c:\diary\zhz_diary_obsidian\tags <- тут будут лежать файлы с тегами, и со списками постов по каждому тегу
+#C:\diary\zhz_diary_obsidian\.obsidian <- тут будут лежать настройки обсидиана
 #c:\diary\scripts <- сюда сложить питоновские файлы
 #c:\diary\dump <- тут будут метаданные постов и "сырые" посты в формате html
 

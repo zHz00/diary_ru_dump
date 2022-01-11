@@ -68,25 +68,51 @@ for offset in range(s.start, s.stop, step):
     for div in posts_divs:
         if div.has_attr("class") and len(div["class"])>0:
             class_name=div["class"][0]
-            if class_name =="day-header":
+            if class_name == "day-header":
                 posts_dates_s.append(div.span.contents[0])
                 posts_dates.append(convert_date(div.span.contents[0]))
-            if class_name =="post-header":
+            if class_name == "singlePost" and div.div["class"][0] == "countSecondDate":
+                posts_dates_s.append(div.div.span.contents[0])
+                posts_dates.append(convert_date(div.div.span.contents[0]))
+            if class_name == "post-header" or class_name == "postTitle":
                 if len(posts_dates_s)!=len(posts_links)+1:#если для текущей записи не нашлось даты из-за двух записей в течение дня
                     posts_dates_s.append(posts_dates_s[-1])
                     posts_dates.append(posts_dates[-1])
-                posts_links.append(div.a["href"])
-                id_begin=div.a["href"].find(s.link_marks[s.links_style])+len(s.link_marks[s.links_style])
-                posts_ids.append(div.a["href"][id_begin:id_begin+9])
+                #if div.has_attr("a"):
+                #    posts_links.append(div.a["href"])
+                #    id_begin=div.a["href"].find(s.link_marks[s.links_style])+len(s.link_marks[s.links_style])
+                #    posts_ids.append(div.a["href"][id_begin:div.a["href"].rfind(".")-1])
+                #else:
+                    #закрытая запись. текста у нас нет, поэтому сохраняем только ИД записи
+                    #обращаю внимания, что если запись доступна, но нет заголовка, то ссылка всё равно генерируется, поэтому ИД у нас есть
+                #    posts_links.append(div.parent)
                 posts_times_s.append(div.span.contents[0])
-                if len(div.a.contents)>0:
-                    posts_titles.append(div.a.contents[0])
+                if div.find("a")!=None:
+                    if len(div.a.contents)>0:
+                        posts_titles.append(div.a.contents[0])
+                    else:
+                        posts_titles.append("(no title)")
                 else:
-                   posts_titles.append("(no title)")
+                    posts_titles.append("(closed)")
+            if class_name == "postLinksBackg":#старый дизайн
+                posts_links.append(div.span.a["href"])
+                id_begin=div.span.a["href"].lower().find(s.link_marks[s.links_style])+len(s.link_marks[s.links_style])
+                id_end=div.span.a["href"].rfind("_")
+                if id_end==-1:
+                    id_end=div.span.a["href"].rfind(".")#без заголовка, поэтому нижнего подчёркивания нет
+                posts_ids.append(div.span.a["href"][id_begin:id_end])
                 print(f"Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
-            if class_name =="post-inner":
+            if class_name == "post-links":#новый дизайн
+                posts_links.append(div.div.a["href"])
+                id_begin=div.div.a["href"].find(s.link_marks[s.links_style])+len(s.link_marks[s.links_style])
+                id_end=div.div.a["href"].find("_",id_begin)
+                if id_end==-1:
+                    id_end=div.a["href"].find(".",id_begin)#без заголовка, поэтому нижнего подчёркивания нет
+                posts_ids.append(div.div.a["href"][id_begin:id_end])
+                print(f"Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
+            if class_name == "post-inner" or class_name == "postInner":
                 posts_contents.append(div.prettify().replace('\r', '').replace('\n', ''))
-            if class_name == "post-content":
+            if class_name == "post-content" or class_name == "postContent":
                 tags=[]
                 post_tags=[]
                 posts_ps=div.find_all("p")

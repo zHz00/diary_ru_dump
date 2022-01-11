@@ -36,7 +36,10 @@ def strip_post_id(url):
         if(id_begin_raw==-1):
             continue
         id_begin=id_begin_raw+len(link_mark)
-        return url[id_begin:id_begin+s.post_id_len]
+        id_end=url.find("_",id_begin)
+        if id_end==-1:
+            id_end=url.find(".",id_begin)#без заголовка, поэтому нижнего подчёркивания нет
+        return url[id_begin:id_end]
     return "-1"
 
 phase=0
