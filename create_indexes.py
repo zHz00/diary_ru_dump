@@ -7,43 +7,9 @@ from win32_setctime import setctime
 import init
 import re
 
-init.create_folders()
-
-file_list=os.listdir(s.base_folder)
-
-
-# I. Полный список постов
-
-counter=0
-post_list=[]
-
-for post_file_name in file_list:
-    if post_file_name.endswith(".md")==False:
-        continue
-    post_file_name=s.base_folder+post_file_name.strip()
-    post_file=open(post_file_name,"r",encoding=s.post_list_encoding)
-    post_contents=post_file.readlines()
-    if len(post_contents)<5:
-        continue #это не настоящий пост а какая-то ерунда
-    post_date=post_contents[4].strip()
-    post_id=post_contents[-1].strip()[4:]
-    post_file.close()
-    post_time=time.mktime(datetime.datetime.strptime(post_date,"%Y-%m-%d, %H:%M").timetuple())
-    post_list.append((post_time,os.path.splitext(os.path.basename(post_file_name.strip()))[0],post_id))
-    counter+=1
-
-post_list.sort(key=lambda pdt:pdt[0])
-
-post_index=open(s.base_folder+s.indexes_folder+s.list_file_name,"w",encoding=s.post_encoding,newline="\n")
-post_index.write("| Дата | Заголовок |\n| --- | --- |\n")
-for post in post_list:
-    time_s=datetime.datetime.fromtimestamp(post[0]).strftime("%Y&#8209;%m&#8209;%d")
-    post_index.write(f"| {time_s} | [[{post[1]}\|{post[1]}]] |\n")
-post_index.close()
-
-print(f"End create_indexes: list. Counter={counter}")
-
-# II. Календарь
+days_with_no_posts=0   
+days_with_one_post=0
+days_with_many_posts=0
 
 weeks_in_month=8
 days_in_week_markup=8
@@ -89,11 +55,8 @@ def generate_post_list(post_links):
 
     return bare_filename
 
-days_with_no_posts=0   
-days_with_one_post=0
-days_with_many_posts=0
 
-def generate_year(year):
+def generate_year(year,post_list):
     global days_with_no_posts
     global days_with_one_post
     global days_with_many_posts
@@ -148,72 +111,114 @@ def generate_year(year):
     return text
 
 
-        
 
-year_start=datetime.datetime.fromtimestamp(post_list[0][0]).year
-year_end=datetime.datetime.fromtimestamp(post_list[-1][0]).year
-
-calendar_text=""
-for year in range(year_start,year_end+1):
-    calendar_text+=generate_year(year)
-
-post_calendar=open(s.base_folder+s.indexes_folder+s.calendar_file_name,"w",encoding=s.post_encoding,newline="\n")
-post_calendar.write(calendar_text)
-post_calendar.close()
+def create_indexes():
+    print("Stage 5 of 6: Creating indexes...")
+    print("Creating full list...",end="")
+    file_list=os.listdir(s.base_folder)
 
 
-print(f"End create_indexes: calendar. No posts days:{days_with_no_posts}, 1 post days: {days_with_one_post}, many post days:{days_with_many_posts}")
+    # I. Полный список постов
 
-# III. Теперь сделаем список тегов
+    counter=0
+    post_list=[]
 
-def find_key(voc,key):
-    if key in voc:
-        return key
-    for actual_key in voc.keys():
-        ak_lwr=actual_key.lower()
-        k_lwr=key.lower()
-        if ak_lwr==k_lwr:
-            return actual_key
-    raise KeyError
-
-tags_files=os.listdir(s.base_folder+s.tags_folder)
-tags_list={}
-for tag in tags_files:
-    tags_list[os.path.splitext(tag)[0]]=[]#подготовим списки постов с каждым тегом
-for post in post_list:
-    post_id=post[2]
-    post_meta=s.dump_folder+post[2]+".txt"
-    f_meta=open(post_meta,"r",encoding=s.post_encoding)
-    meta=f_meta.readlines()
-
-    #оттуда проще прочитать теги, чем парсить
-
-    tags=meta[5:]
-    for tag in tags:
-        if len(tag.strip())==0:#у нас последняя строчка пустая. ну и на случай если другие пустые будут
+    for post_file_name in file_list:
+        if post_file_name.endswith(".md")==False:
             continue
-        tag_safe_name=re.sub(r'[\\/*?:"<>|]',"",tag.strip())
-        tags_list[find_key(tags_list,tag_safe_name)].append(post)
-#теперь у нас в словаре тегов для каждого тега есть список постов с его участием
+        post_file_name=s.base_folder+post_file_name.strip()
+        post_file=open(post_file_name,"r",encoding=s.post_list_encoding)
+        post_contents=post_file.readlines()
+        if len(post_contents)<5:
+            continue #это не настоящий пост а какая-то ерунда
+        post_date=post_contents[4].strip()
+        post_id=post_contents[-1].strip()[4:]
+        post_file.close()
+        post_time=time.mktime(datetime.datetime.strptime(post_date,"%Y-%m-%d, %H:%M").timetuple())
+        post_list.append((post_time,os.path.splitext(os.path.basename(post_file_name.strip()))[0],post_id))
+        counter+=1
 
-common_tag_list_file=open(s.base_folder+s.indexes_folder+s.tags_file_name,"w",encoding=s.post_encoding,newline="\n")
-common_tag_list_file.write("| Тег | N |\n| --- | --- |\n")
+    post_list.sort(key=lambda pdt:pdt[0])
 
-for tag,tag_post_list in tags_list.items():
-    print("Processing tag: "+tag)
-    tag_file_name=s.base_folder+s.tags_folder+tag+".md"
-    tag_file=open(tag_file_name,"w",encoding=s.post_encoding,newline="\n")
-    tag_file.write("## Тег: "+tag+"\n")
-    tag_file.write("#Теги\n\n")
-    tag_file.write("| Дата | Заголовок |\n| --- | --- |\n")
-    tag_post_list.sort(key=lambda pdt:pdt[0])
-    for post in tag_post_list:
+    post_index=open(s.base_folder+s.indexes_folder+s.list_file_name,"w",encoding=s.post_encoding,newline="\n")
+    post_index.write("| Дата | Заголовок |\n| --- | --- |\n")
+    for post in post_list:
         time_s=datetime.datetime.fromtimestamp(post[0]).strftime("%Y&#8209;%m&#8209;%d")
-        tag_file.write(f"| {time_s} | [[{post[1]}\|{post[1]}]] |\n")
-    tag_file.close()
+        post_index.write(f"| {time_s} | [[{post[1]}\|{post[1]}]] |\n")
+    post_index.close()
 
-    common_tag_list_file.write(f"| [[{tag}\|{tag}]] | {len(tag_post_list)} |\n")
+    print(f"Done. Counter={counter}\nCreating calendar...")
 
-common_tag_list_file.close()
+    # II. Календарь
 
-print(f"End create_indexes: tags. Tags precessed: {len(tags_list)}")
+    year_start=datetime.datetime.fromtimestamp(post_list[0][0]).year
+    year_end=datetime.datetime.fromtimestamp(post_list[-1][0]).year
+
+    calendar_text=""
+    for year in range(year_start,year_end+1):
+        calendar_text+=generate_year(year,post_list)
+
+    post_calendar=open(s.base_folder+s.indexes_folder+s.calendar_file_name,"w",encoding=s.post_encoding,newline="\n")
+    post_calendar.write(calendar_text)
+    post_calendar.close()
+
+
+    print(f"Done. No posts days:{days_with_no_posts}, 1 post days: {days_with_one_post}, many post days:{days_with_many_posts}\nCreating tags lists...")
+
+    # III. Теперь сделаем список тегов
+
+    def find_key(voc,key):
+        if key in voc:
+            return key
+        for actual_key in voc.keys():
+            ak_lwr=actual_key.lower()
+            k_lwr=key.lower()
+            if ak_lwr==k_lwr:
+                return actual_key
+        raise KeyError
+
+    tags_files=os.listdir(s.base_folder+s.tags_folder)
+    tags_list={}
+    for tag in tags_files:
+        tags_list[os.path.splitext(tag)[0]]=[]#подготовим списки постов с каждым тегом
+    for post in post_list:
+        post_id=post[2]
+        post_meta=s.dump_folder+post[2]+".txt"
+        f_meta=open(post_meta,"r",encoding=s.post_encoding)
+        meta=f_meta.readlines()
+
+        #оттуда проще прочитать теги, чем парсить
+
+        tags=meta[5:]
+        for tag in tags:
+            if len(tag.strip())==0:#у нас последняя строчка пустая. ну и на случай если другие пустые будут
+                continue
+            tag_safe_name=re.sub(r'[\\/*?:"<>|]',"",tag.strip())
+            tags_list[find_key(tags_list,tag_safe_name)].append(post)
+    #теперь у нас в словаре тегов для каждого тега есть список постов с его участием
+
+    common_tag_list_file=open(s.base_folder+s.indexes_folder+s.tags_file_name,"w",encoding=s.post_encoding,newline="\n")
+    common_tag_list_file.write("| Тег | N |\n| --- | --- |\n")
+
+    for tag,tag_post_list in tags_list.items():
+        print("Processing tag: "+tag)
+        tag_file_name=s.base_folder+s.tags_folder+tag+".md"
+        tag_file=open(tag_file_name,"w",encoding=s.post_encoding,newline="\n")
+        tag_file.write("## Тег: "+tag+"\n")
+        tag_file.write("#Теги\n\n")
+        tag_file.write("| Дата | Заголовок |\n| --- | --- |\n")
+        tag_post_list.sort(key=lambda pdt:pdt[0])
+        for post in tag_post_list:
+            time_s=datetime.datetime.fromtimestamp(post[0]).strftime("%Y&#8209;%m&#8209;%d")
+            tag_file.write(f"| {time_s} | [[{post[1]}\|{post[1]}]] |\n")
+        tag_file.close()
+
+        common_tag_list_file.write(f"| [[{tag}\|{tag}]] | {len(tag_post_list)} |\n")
+
+    common_tag_list_file.close()
+
+    print(f"Done. Tags processed: {len(tags_list)}")
+
+if __name__=="__main__":
+    init.create_folders()
+    create_indexes()

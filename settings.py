@@ -1,3 +1,5 @@
+version=3
+
 #Замените в следующей настройке мой ник на необходимый
 diary_url='https://diary.ru/~zHz00?oam&rfrom='
 #diary_url='https://zhz00.diary.ru/?tag=33243&n=t&page='
