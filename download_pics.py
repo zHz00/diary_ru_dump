@@ -10,6 +10,9 @@ import init
 
 def download_pics():
     print("Stage 2 of 6: Downloading images...")
+    if s.download_pics==False:
+        print("Skip.")
+        return
 
     pic_list_file=open(s.base_folder+s.pics_file,"r",encoding=s.pics_file_encoding)
     pics_list_text=pic_list_file.readlines()

@@ -7,6 +7,9 @@ import init
 
 def update_times():
     print("Stage 6 of 6: Update file creation time...",end="")
+    if os.name!="nt":
+        print("Skip.\nupdate_times now work only on Windows! Sorry...")
+        return
 
     file_list=os.listdir(s.base_folder)
 

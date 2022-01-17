@@ -1,6 +1,9 @@
 import init
 version=3
 
+uname="zHz00"
+session=""
+
 #Замените в следующей настройке мой ник на необходимый
 diary_url='https://diary.ru/~zHz00?oam&rfrom='
 #diary_url='https://zhz00.diary.ru/?tag=33243&n=t&page='
@@ -14,7 +17,10 @@ download_pics=True
 
 def toggle_pics():
     global download_pics
+    global uname
+    global session
     download_pics=not download_pics
+    change_username(uname,session)
 
 
 #Тут надо придумать шаблон для поиска номеров постов. Если не знаете, что делать, замените "00" на необходимый ник.
@@ -107,7 +113,10 @@ def change_username(uname,session):
     link_marks=[uname+"/p",uname+".diary.ru/p"]
     cross_link_checking=[uname+".diary.ru/","/~"+uname+"/"]
     saved_cookies['_session']=session
-    base_folder="../"+uname+"_diary_obsidian/"
+    if download_pics:
+        base_folder="../"+uname+"_diary_obsidian/"
+    else:
+        base_folder="../"+uname+"_diary_obsidian_nopics/"
     dump_folder="../dump_"+uname+"\\"
 
     if len(saved_cookies['_session'])<2:
