@@ -1,3 +1,4 @@
+import init
 version=3
 
 #Замените в следующей настройке мой ник на необходимый
@@ -11,6 +12,10 @@ diary_url_mode=0
 #Нужны ли картинки?
 download_pics=True
 
+def toggle_pics():
+    global download_pics
+    download_pics=not download_pics
+
 
 #Тут надо придумать шаблон для поиска номеров постов. Если не знаете, что делать, замените "00" на необходимый ник.
 link_marks=["00/p","00.diary.ru/p"]
@@ -21,11 +26,9 @@ cross_link_checking=["zHz00.diary.ru/","/~zHz00/","zhz00.diary.ru/","/~zhz00/"]
 pic_checking=[".jpg",".jpeg",".png",".gif"]
 
 #Для открытых дневников задайте все три ключа как пустые строки. Для закрытых возьмите значения кукисов из своего браузера.
-saved_cookies={'_csrf':'',
-'_session':'',
-'_identity_':''}
+saved_cookies={'_session':''}
 
-if len(saved_cookies['_csrf'])<2:
+if len(saved_cookies['_session'])<2:
     links_style=0
 else:
     links_style=1
@@ -43,7 +46,7 @@ wait_time=60 #sec
 base_folder="../zhz_diary_obsidian/"
 #base_folder="../zhz_diary_obsidian_nopics/"
 pics_folder="pics/"
-dump_folder="../dump\\"
+dump_folder="../dump_zhz00\\"
 indexes_folder="indexes/"
 days_folder="days/"
 tags_folder="tags/"
@@ -75,3 +78,43 @@ post_encoding="utf-8"
 
 forbidden_pic_urls=["google.ru/search?q=","google.com/search?q=","chan.sankakustatic.com","img.rudepedexe1.com","img.totafofesos1.com"]
 user_agent = {'User-agent': 'Mozilla/5.0'}
+
+settings_file_name="username.txt"
+
+def enter_username():
+    uname=input("Please enter username:")
+    session=input("Please paste session ID, if diary has restricted access (otherwise press enter)")
+    settings_file=open(settings_file_name,"w",encoding=links_file_encoding)
+    settings_file.write(uname)
+    settings_file.write(session)
+    load_username()
+
+def load_username():
+    settings_file=open(settings_file_name,"r",encoding=links_file_encoding)
+    uname=settings_file.readline().strip()
+    session=settings_file.readline().strip()
+    change_username(uname,session)
+
+
+def change_username(uname,session):
+    global diary_url
+    global link_marks
+    global cross_link_checking
+    global base_folder
+    global dump_folder
+    global links_style
+    diary_url='https://diary.ru/~'+uname+'?oam&rfrom='
+    link_marks=[uname+"/p",uname+".diary.ru/p"]
+    cross_link_checking=[uname+".diary.ru/","/~"+uname+"/"]
+    saved_cookies['_session']=session
+    base_folder="../"+uname+"_diary_obsidian/"
+    dump_folder="../dump_"+uname+"\\"
+
+    if len(saved_cookies['_session'])<2:
+        links_style=0
+    else:
+        links_style=1
+
+    init.create_folders()
+    
+        

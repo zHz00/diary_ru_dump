@@ -14,7 +14,7 @@ def download_pics():
     pic_list_file=open(s.base_folder+s.pics_file,"r",encoding=s.pics_file_encoding)
     pics_list_text=pic_list_file.readlines()
     pic_list_file.close()
-    print(f"Ordinary pictures:{len(pic_list_file)/3}")
+    print(f"Ordinary pictures:{len(pics_list_text)/3}")
 
     link_list_file=open(s.base_folder+s.links_file,"r",encoding=s.pics_file_encoding)
     links_list_text=link_list_file.readlines()
@@ -45,7 +45,7 @@ def download_pics():
 
 
     print(f"Pictures from urls:{pics_from_urls}")
-    total_pics=len(pic_list_file)/3
+    total_pics=len(pics_list_text)/3
     print(f"Total: {total_pics} images.")
 
 

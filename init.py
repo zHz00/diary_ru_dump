@@ -26,4 +26,9 @@ def reset_vault():
         path=s.base_folder+s.indexes_folder+file
         if(Path(path).is_file()):
             os.remove(path)
+    for file in os.listdir(s.base_folder+s.indexes_folder+s.days_folder):
+        path=s.base_folder+s.indexes_folder+s.days_folder+file
+        if(Path(path).is_file()):
+            os.remove(path)
+
     print("Done.")

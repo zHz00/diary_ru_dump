@@ -20,7 +20,7 @@ def post_replace(file_name,str_from,str_to):
 
 def strip_post_id(url):
     for link_mark in s.link_marks:
-        id_begin_raw=url.find(link_mark)
+        id_begin_raw=url.lower().find(link_mark.lower())
         if(id_begin_raw==-1):
             continue
         id_begin=id_begin_raw+len(link_mark)
@@ -100,7 +100,7 @@ def replace_urls():
         found=False
         link_is_pic=False
         for test_str in s.pic_checking:
-            if link_src['url'].strip().lower().endswith(test_str)!=False:
+            if link_src['url'].strip().lower().endswith(test_str.lower())!=False:
                 link_is_pic=True
         if link_is_pic and s.download_pics==True:
             link_dest=s.pics_folder+os.path.basename(urlparse(link_src['url'].strip()).path).strip()

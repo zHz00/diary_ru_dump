@@ -9,8 +9,10 @@ from bs4 import BeautifulSoup
 import settings as s
 import init
 
-def markdown_all_diary():
+def markdown_all_diary(reset):
     print ("Stage 3 of 6: Creating markdown files from HTML...")
+    if(reset==True):
+        init.reset_vault()
     file_list=listdir(s.dump_folder)
 
     file_list_out=file_list.copy()
@@ -86,7 +88,7 @@ def markdown_all_diary():
         test_path_as_tag=Path(out_name_as_tag)
         append_num=0
         while test_path.is_file() or test_path_as_tag.is_file():
-            print("File "+out_name+" exists! Renaming...")
+            print(f"[{percentage}%]File "+out_name+" exists! Renaming...")
             out_name_file=out_name_file_base+"["+str(append_num)+"]"
             out_name=s.base_folder+out_name_file+".md"
             out_name_as_tag=s.base_folder+s.tags_folder+out_name_file+".md"
@@ -120,15 +122,15 @@ def markdown_all_diary():
             if re.search(r'[\[\]\^\#\|]',link.contents[0]):
                 print(f"Warning! \"a\" tag has forbidden characters: {link.contents}")
             for test_str in s.cross_link_checking:
-                if link['href'].find(test_str)!=-1:
+                if link['href'].lower().find(test_str.lower())!=-1:
                     link_is_cross_link=True
             for test_str in s.pic_checking:
-                if link['href'].strip().lower().endswith(test_str)!=False and link.find("img")==None:
+                if link['href'].strip().lower().endswith(test_str.lower())!=False and link.find("img")==None:
                     link_is_pic=True
             #воркэраунд для ситуации, когда имя файла упоминается как аргумент к запросу в гугл 
             # (такой случай один, но нормализовать его в самом дневнике я не могу, поэтому делаю тут)
             for test_str in s.forbidden_pic_urls:
-                if link['href'].strip().lower().find(test_str)!=-1:
+                if link['href'].strip().lower().find(test_str.lower())!=-1:
                     link_is_pic=False
             if link_is_cross_link==False and link_is_pic==False:
                 continue
@@ -167,5 +169,4 @@ def markdown_all_diary():
 
 if __name__=="__main__":
     init.create_folders()
-    init.reset_vault()
-    markdown_all_diary()
+    markdown_all_diary(reset=True)

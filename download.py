@@ -4,10 +4,10 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import re
-
 from requests.sessions import RequestsCookieJar
-import settings as s
+from pathlib import Path
 
+import settings as s
 import init
 
 def convert_date(date):
@@ -28,13 +28,45 @@ def convert_date(date):
     date = date.split()
     return date[3] + '-' + month_convertor[date[2]] + '-' + date[1]
 
-def download():
-    print("Stage 1 of 6: Downloading posts...")
-
+def get_cookies():
     cookies=RequestsCookieJar()
     for c_name,c_value in s.saved_cookies.items():
         cookie=requests.cookies.create_cookie(domain="diary.ru",name=c_name,value=c_value)
-        cookies.set_cookie(cookie)
+        cookies.set_cookie(cookie) 
+    return cookies
+
+def find_last_page():
+    print("Finding last page...")
+    page_url=s.diary_url
+    print("Downloading "+page_url+"...")
+    page = requests.get(page_url,cookies=get_cookies())
+    page = BeautifulSoup(page.text, 'html.parser')
+    post_divs=page.find_all("div")
+    for div in post_divs:
+        if div.has_attr("class") and len(div["class"])>0 and div["class"][0]=="pagination":
+            hrefs=div.find_all("a")
+            for href in hrefs:
+                last_num_idx=href["href"].rfind("=")
+                if href.has_attr("href") and last_num_idx!=-1 and len(href["href"])>last_num_idx+1:
+                    last_num=int(href["href"][last_num_idx+1:])
+                    break
+    print(f"Last page: {last_num}")
+    return last_num
+
+
+def download(update,auto_find):
+    if(auto_find):
+        last_page=find_last_page()
+    else:
+        last_page=s.start if s.start>s.stop else s.stop
+    if(update):
+        s.start=last_page+20
+        s.stop=20
+    else:
+        s.start=20
+        s.stop=last_page+20
+
+    print("Stage 1 of 6: Downloading posts...")
 
     if s.diary_url_mode==0 and s.start<=s.stop:
         step=20
@@ -48,12 +80,12 @@ def download():
     for offset in range(s.start, s.stop, step):
         page_url=s.diary_url+str(offset)
         print("Downloading "+page_url+"...")
-        page = requests.get(page_url,cookies=cookies)
+        page = requests.get(page_url,cookies=get_cookies())
 
         # тестирование, работают куки или нет. отключено
-        #testpage=open("testpage.htm","w")
-        #testpage.write(page.text)
-        #testpage.close()
+        testpage=open("testpage.htm","w")
+        testpage.write(page.text)
+        testpage.close()
 
         page = BeautifulSoup(page.text, 'html.parser')
         posts_titles=[]
@@ -101,7 +133,7 @@ def download():
                         posts_titles.append("(closed)")
                 if class_name == "postLinksBackg":#старый дизайн
                     posts_links.append(div.span.a["href"])
-                    id_begin=div.span.a["href"].lower().find(s.link_marks[s.links_style])+len(s.link_marks[s.links_style])
+                    id_begin=div.span.a["href"].lower().find(s.link_marks[s.links_style].lower())+len(s.link_marks[s.links_style])
                     id_end=div.span.a["href"].rfind("_")
                     if id_end==-1:
                         id_end=div.span.a["href"].rfind(".")#без заголовка, поэтому нижнего подчёркивания нет
@@ -110,16 +142,16 @@ def download():
                     print(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
                 if class_name == "post-links":#новый дизайн
                     posts_links.append(div.div.a["href"])
-                    id_begin=div.div.a["href"].find(s.link_marks[s.links_style])+len(s.link_marks[s.links_style])
+                    id_begin=div.div.a["href"].lower().find(s.link_marks[s.links_style].lower())+len(s.link_marks[s.links_style])
                     id_end=div.div.a["href"].find("_",id_begin)
                     if id_end==-1:
                         id_end=div.a["href"].find(".",id_begin)#без заголовка, поэтому нижнего подчёркивания нет
                     posts_ids.append(div.div.a["href"][id_begin:id_end])
-                    percentage=int(len(posts_ids)/(s.stop-s.start)*step*100)
-                    print(f"[{percentage}]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
+                    percentage=int(len(posts_ids)/abs(s.stop-s.start)*100)
+                    print(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
                 if class_name == "post-inner" or class_name == "postInner":
                     posts_contents.append(div.prettify().replace('\r', '').replace('\n', ''))
-                if class_name == "post-content" or class_name == "postContent":
+                if class_name == "postContent":
                     tags=[]
                     post_tags=[]
                     posts_ps=div.find_all("p")
@@ -152,7 +184,12 @@ def download():
         for x in range(len(posts_ids)):
             #метаданные собираем в отдельный файл
 
-            out_meta=open(s.dump_folder+"p"+posts_ids[x]+".txt","w",encoding=s.post_encoding)
+            post_meta_file_name=s.dump_folder+"p"+posts_ids[x]+".txt"
+            if Path(post_meta_file_name).is_file() and update==True:
+                #всё, дошли до старых постов
+                print("Update complete, found old posts.")
+                return #!
+            out_meta=open(post_meta_file_name,"w",encoding=s.post_encoding)
             out_meta.write(f"{posts_ids[x]}\n")
             out_meta.write(f"{posts_links[x]}\n")
             out_meta.write(f"{posts_dates[x]}\n")
@@ -205,4 +242,4 @@ def download():
 
 if __name__=="__main__":
     init.create_folders()
-    download()
+    download(update=False,auto_find=False)
