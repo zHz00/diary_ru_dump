@@ -6,6 +6,7 @@ from os import listdir
 from pathlib import Path
 import re
 from bs4 import BeautifulSoup
+
 import settings as s
 import init
 

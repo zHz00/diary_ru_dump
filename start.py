@@ -1,6 +1,3 @@
-from calendar import HTMLCalendar
-
-from six import indexbytes
 from download import download
 from download_pics import download_pics
 from markdown_all_diary import markdown_all_diary
@@ -11,35 +8,36 @@ import settings as s
 import init
 
 
-hello_message=lambda:f'diary.ru dump utility, version {s.version}.\n\
-(C) zHz, 2022. Licenced under MIT license, see readme.txt for details.\n\
-\n\
-Please note that you can manually start every script. It will work correctly with settings described in settings.py\n\
-\n\
-Stage 1: Download posts as HTML\n\
-Stage 2: Download pics if needed\n\
-Stage 3: Convert HTML to markdown\n\
-Stage 4: Replace cross-links\n\
-Stage 5: Create indexes\n\
-Stage 6: Update creation times\n\
-\n\
-Working with pictures: {"Enabled" if s.download_pics==True else "Disabled"}\n\
-Diary url: {s.diary_url}\n\
-Output folder: {s.base_folder}\n\
-\n\
-Possible scenarios:\n\
-\n\
-Stage:                     [   1   ][   2   ][   3   ][   4   ][   5   ][   6   ]\n\
-\n\
-A. Total (default)         [   +   ][   {"+" if s.download_pics==True else "-"}   ][   +   ][   +   ][   +   ][   +   ]\n\
-B. Update + markup         [  +/-  ][   {"+" if s.download_pics==True else "-"}   ][   +   ][   +   ][   +   ][   +   ]\n\
-C. Update (no markup)      [  +/-  ][   {"+" if s.download_pics==True else "-"}   ][   -   ][   -   ][   -   ][   -   ]\n\
-D. Download (no markup)    [   +   ][   {"+" if s.download_pics==True else "-"}   ][   -   ][   -   ][   -   ][   -   ]\n\
-E. Markup                  [   -   ][   -   ][   +   ][   +   ][   +   ][   +   ]\n\
-Y. Change username\n\
-Z. Toggle pics enable/disable mode \n\
-\n\
-Please choose scenario:'
+hello_message=lambda:f'''diary.ru dump utility, version {s.version}.
+(C) zHz, 2022. Licenced under MIT license, see readme.txt for details.
+
+Diary dump consists of six stages:
+
+Stage 1: Download posts as HTML
+Stage 2: Download pics if needed
+Stage 3: Convert HTML to markdown
+Stage 4: Replace cross-links
+Stage 5: Create indexes
+Stage 6: Update creation times (Windows only)
+
+Working with pictures: {"Enabled" if s.download_pics==True else "Disabled"}
+Diary url: {s.diary_url}
+Output folder: {s.base_folder}
+
+Possible scenarios:
+
+Stage:                     [  1  ][  2  ][  3  ][  4  ][  5  ][  6  ]
+
+A. Total (default)         [  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
+B. Update + markup         [ +/- ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
+C. Update (no markup)      [ +/- ][  {"+" if s.download_pics==True else "-"}  ][  -  ][  -  ][  -  ][  -  ]
+D. Download (no markup)    [  +  ][  {"+" if s.download_pics==True else "-"}  ][  -  ][  -  ][  -  ][  -  ]
+E. Markup                  [  -  ][  -  ][  +  ][  +  ][  +  ][  +  ]
+X. Change username
+Y. Toggle pics enable/disable mode
+Z. Quit
+
+Please choose scenario:'''
 
 no=lambda: 0
 
@@ -61,8 +59,9 @@ scenarios={
     'C':[s1u,	s2,	no,	no,	no,	no],
     'D':[s1,	s2,	no,	no,	no,	no],
     'E':[no,	no,	s3,	s4,	s5,	s6],
-    'Y':[change_username_lambda],
-    'Z':[toggle_pics_lambda]
+    'X':[change_username_lambda],
+    'Y':[toggle_pics_lambda],
+    'Z':[no]
 }
 
 continue_execution={
@@ -71,15 +70,16 @@ continue_execution={
     'C':False,
     'D':False,
     'E':False,
+    'X':True,
     'Y':True,
-    'Z':True,
+    'Z':False,
 }
 
 s.load_username()
 
 while True:
     print(hello_message())
-    letter=input()
+    letter=input().upper()
     if letter in scenarios:
         for function in scenarios[letter]:
             function()

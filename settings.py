@@ -10,6 +10,7 @@ diary_url='https://diary.ru/~zHz00?oam&rfrom='
 
 # 0 -- режим постов -- 20, 40, 60 и т.п.
 # 1 -- режим страниц, если скачиваем по тегу, 1, 2, 3 и т.п.
+# 2 -- режим файла
 diary_url_mode=0
 
 #Нужны ли картинки?
@@ -58,6 +59,7 @@ days_folder="days/"
 tags_folder="tags/"
 obsidian_settings_folder=".obsidian/"
 obsidian_default_settings_folder="default_obsidian_config/"
+test_folder="tests/data/"
 
 #Если скрипты распакованы в папку c:\diary\scripts\, то структура будет такой:
 #c:\diary\zhz_diary_obsidian <- тут будут сами посты в формате .md

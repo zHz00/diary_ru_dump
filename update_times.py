@@ -1,8 +1,9 @@
 import time
 import datetime
 import os
-import settings as s
 from win32_setctime import setctime
+
+import settings as s
 import init
 
 def update_times():

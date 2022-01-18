@@ -5,6 +5,7 @@ import re
 import os
 from urllib.parse import urlparse
 from pathlib import Path
+
 import settings as s
 import init
 
@@ -101,15 +102,29 @@ def download_pics():
             pic_skipped+=1
             continue
         print(percentage_header+"Downloading "+pic_url+"...")
-        try:
-            pic=requests.get(pic_url,verify=False,headers=s.user_agent)
-        except:
-            open(s.base_folder+s.pics_folder+pic_name,"wb").close()
-            warning="Error during downloading ["+pic_url+"]! Skipping..."
-            warnings.append(warning)
-            print(percentage_header+warning)
-            pic_errors+=1
-            continue
+
+        if s.diary_url_mode!=2:
+            try:
+                pic=requests.get(pic_url,verify=False,headers=s.user_agent)
+            except:
+                open(s.base_folder+s.pics_folder+pic_name,"wb").close()
+                warning="Error during downloading ["+pic_url+"]! Skipping..."
+                warnings.append(warning)
+                print(percentage_header+warning)
+                pic_errors+=1
+                continue
+        else:
+            try:
+                src_pic=open(s.test_folder+pic_name,"rb")
+                pic.content=src_pic.read()
+            except:
+                open(s.base_folder+s.pics_folder+pic_name,"wb").close()
+                warning="Error during downloading ["+pic_url+"]! Skipping..."
+                warnings.append(warning)
+                print(percentage_header+warning)
+                pic_errors+=1
+                continue                
+
         out_pic=open(s.base_folder+s.pics_folder+pic_name,"wb")
         out_pic.write(pic.content)
         out_pic.close()

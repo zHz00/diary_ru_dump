@@ -1,5 +1,6 @@
 #download diary
 
+from cgi import test
 import requests
 from bs4 import BeautifulSoup
 import time
@@ -53,6 +54,13 @@ def find_last_page():
     print(f"Last page: {last_num}")
     return last_num
 
+def test_epigraph(epigraph,test_name):
+    if test_name in epigraph.keys():
+        return True
+    else:
+        epigraph[test_name]=True
+        return False
+
 
 def download(update,auto_find):
     if(auto_find):
@@ -68,6 +76,8 @@ def download(update,auto_find):
 
     print("Stage 1 of 6: Downloading posts...")
 
+    step=20
+
     if s.diary_url_mode==0 and s.start<=s.stop:
         step=20
     if s.diary_url_mode==0 and s.start>s.stop:
@@ -79,15 +89,24 @@ def download(update,auto_find):
         
     for offset in range(s.start, s.stop, step):
         page_url=s.diary_url+str(offset)
+        if s.diary_url_mode==2:
+            page_url+=".htm"
         print("Downloading "+page_url+"...")
-        page = requests.get(page_url,cookies=get_cookies())
+        if s.diary_url_mode!=2:
+            page = requests.get(page_url,cookies=get_cookies())
 
-        # тестирование, работают куки или нет. отключено
-        testpage=open("testpage.htm","w")
-        testpage.write(page.text)
-        testpage.close()
+            # тестирование, работают куки или нет. отключено
+            #testpage=open("testpage.htm","w",encoding=s.post_encoding)
+            #testpage.write(page.text)
+            #testpage.close()
 
-        page = BeautifulSoup(page.text, 'html.parser')
+            page = BeautifulSoup(page.text, 'html.parser')
+        else:
+            page_file=open(page_url,"r",encoding=s.post_encoding)
+            page=page_file.read()
+            page_file.close()
+            page=BeautifulSoup(page,'html.parser')
+            
         posts_titles=[]
         posts_links=[]
         posts_dates_s=[]
@@ -101,6 +120,8 @@ def download(update,auto_find):
 
         #разбор данных на метаданные
 
+        epigraph={}
+        #нам надо пропустить все дивы эпиграфа
         posts_divs=page.find_all("div")
         for div in posts_divs:
             if div.has_attr("class") and len(div["class"])>0:
@@ -108,10 +129,13 @@ def download(update,auto_find):
                 if class_name == "day-header":
                     posts_dates_s.append(div.span.contents[0])
                     posts_dates.append(convert_date(div.span.contents[0]))
-                if class_name == "singlePost" and div.div["class"][0] == "countSecondDate":
+                if class_name == "singlePost" and div.div.has_attr("class") and div.div["class"][0] == "countSecondDate":
                     posts_dates_s.append(div.div.span.contents[0])
                     posts_dates.append(convert_date(div.div.span.contents[0]))
-                if class_name == "post-header" or class_name == "postTitle":
+                test_name="postTitle"
+                if class_name == "post-header" or class_name == test_name:
+                    if test_epigraph(epigraph,test_name)==False:
+                        continue
                     if len(posts_dates_s)!=len(posts_links)+1:#если для текущей записи не нашлось даты из-за двух записей в течение дня
                         posts_dates_s.append(posts_dates_s[-1])
                         posts_dates.append(posts_dates[-1])
@@ -131,7 +155,10 @@ def download(update,auto_find):
                             posts_titles.append("(no title)")
                     else:
                         posts_titles.append("(closed)")
-                if class_name == "postLinksBackg":#старый дизайн
+                test_name="postLinksBackg"
+                if class_name == test_name:#старый дизайн
+                    if test_epigraph(epigraph,test_name)==False:
+                        continue
                     posts_links.append(div.span.a["href"])
                     id_begin=div.span.a["href"].lower().find(s.link_marks[s.links_style].lower())+len(s.link_marks[s.links_style])
                     id_end=div.span.a["href"].rfind("_")
@@ -149,9 +176,17 @@ def download(update,auto_find):
                     posts_ids.append(div.div.a["href"][id_begin:id_end])
                     percentage=int(len(posts_ids)/abs(s.stop-s.start)*100)
                     print(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
-                if class_name == "post-inner" or class_name == "postInner":
+                test_name="postInner"
+                if class_name==test_name:
+                    if test_epigraph(epigraph,test_name)==False:
+                        continue
                     posts_contents.append(div.prettify().replace('\r', '').replace('\n', ''))
-                if class_name == "postContent":
+                if class_name == "post-inner":
+                    posts_contents.append(div.prettify().replace('\r', '').replace('\n', ''))
+                test_name="postContent"
+                if class_name == test_name:
+                    if test_epigraph(epigraph,test_name)==False:
+                        continue
                     tags=[]
                     post_tags=[]
                     posts_ps=div.find_all("p")

@@ -2,10 +2,12 @@ import time
 import datetime
 import calendar
 import os
-import settings as s
 from win32_setctime import setctime
-import init
 import re
+
+import settings as s
+import init
+
 
 days_with_no_posts=0   
 days_with_one_post=0
