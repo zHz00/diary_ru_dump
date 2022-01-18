@@ -1,5 +1,5 @@
 import init
-version=3
+version=4
 
 uname="zHz00"
 session=""

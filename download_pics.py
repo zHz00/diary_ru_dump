@@ -10,7 +10,7 @@ import settings as s
 import init
 
 def download_pics():
-    print("Stage 2 of 6: Downloading images...")
+    print("Stage 3 of 6: Downloading images...")
     if s.download_pics==False:
         print("Skip.")
         return

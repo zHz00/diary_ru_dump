@@ -11,7 +11,7 @@ import settings as s
 import init
 
 def markdown_all_diary(reset):
-    print ("Stage 3 of 6: Creating markdown files from HTML...")
+    print ("Stage 2 of 6: Creating markdown files from HTML...")
     if(reset==True):
         init.reset_vault()
     file_list=listdir(s.dump_folder)

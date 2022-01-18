@@ -14,8 +14,8 @@ hello_message=lambda:f'''diary.ru dump utility, version {s.version}.
 Diary dump consists of six stages:
 
 Stage 1: Download posts as HTML
-Stage 2: Download pics if needed
-Stage 3: Convert HTML to markdown
+Stage 2: Convert HTML to markdown
+Stage 3: Download pics if needed
 Stage 4: Replace cross-links
 Stage 5: Create indexes
 Stage 6: Update creation times (Windows only)
@@ -30,9 +30,9 @@ Stage:                     [  1  ][  2  ][  3  ][  4  ][  5  ][  6  ]
 
 A. Total (default)         [  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
 B. Update + markup         [ +/- ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
-C. Update (no markup)      [ +/- ][  {"+" if s.download_pics==True else "-"}  ][  -  ][  -  ][  -  ][  -  ]
-D. Download (no markup)    [  +  ][  {"+" if s.download_pics==True else "-"}  ][  -  ][  -  ][  -  ][  -  ]
-E. Markup                  [  -  ][  -  ][  +  ][  +  ][  +  ][  +  ]
+C. Update (no markup)      [ +/- ][  -  ][  -  ][  -  ][  -  ][  -  ]
+D. Download (no markup)    [  +  ][  -  ][  -  ][  -  ][  -  ][  -  ]
+E. Markup                  [  -  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
 X. Change username
 Y. Toggle pics enable/disable mode
 Z. Quit
@@ -44,8 +44,8 @@ no=lambda: 0
 s1=lambda: download(update=False,auto_find=True)
 s1u=lambda: download(update=True,auto_find=True)
 
-s2=lambda: download_pics()
-s3=lambda: markdown_all_diary(reset=True)
+s2=lambda: markdown_all_diary(reset=True)
+s3=lambda: download_pics()
 s4=lambda: replace_urls()
 s5=lambda: create_indexes()
 s6=lambda: update_times()
@@ -56,9 +56,9 @@ toggle_pics_lambda=lambda: s.toggle_pics()
 scenarios={
     'A':[s1,	s2,	s3,	s4,	s5,	s6],
     'B':[s1u,	s2,	s3,	s4,	s5,	s6],
-    'C':[s1u,	s2,	no,	no,	no,	no],
-    'D':[s1,	s2,	no,	no,	no,	no],
-    'E':[no,	no,	s3,	s4,	s5,	s6],
+    'C':[s1u,	no,	no,	no,	no,	no],
+    'D':[s1,	no,	no,	no,	no,	no],
+    'E':[no,	s2,	s3,	s4,	s5,	s6],
     'X':[change_username_lambda],
     'Y':[toggle_pics_lambda],
     'Z':[no]
