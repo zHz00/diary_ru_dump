@@ -9,7 +9,7 @@ from pathlib import Path
 import settings as s
 import init
 
-def download_pics():
+def download_pics() -> None:
     print("Stage 3 of 6: Downloading images...")
     if s.download_pics==False:
         print("Skip.")

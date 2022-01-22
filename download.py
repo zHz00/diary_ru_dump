@@ -10,8 +10,9 @@ from pathlib import Path
 
 import settings as s
 import init
+import typing
 
-def convert_date(date):
+def convert_date(date: str) -> str:
     month_convertor = {
         'января' : '01',
         'февраля' : '02',
@@ -29,14 +30,14 @@ def convert_date(date):
     date = date.split()
     return date[3] + '-' + month_convertor[date[2]] + '-' + date[1]
 
-def get_cookies():
+def get_cookies() -> None:
     cookies=RequestsCookieJar()
     for c_name,c_value in s.saved_cookies.items():
         cookie=requests.cookies.create_cookie(domain="diary.ru",name=c_name,value=c_value)
         cookies.set_cookie(cookie) 
     return cookies
 
-def find_last_page():
+def find_last_page() -> int:
     print("Finding last page...")
     page_url=s.diary_url
     print("Downloading "+page_url+"...")
@@ -54,7 +55,7 @@ def find_last_page():
     print(f"Last page: {last_num}")
     return last_num
 
-def test_epigraph(epigraph,test_name):
+def test_epigraph(epigraph: typing.Dict[str,bool],test_name: str) -> bool:
     if test_name in epigraph.keys():
         return True
     else:
@@ -62,7 +63,7 @@ def test_epigraph(epigraph,test_name):
         return False
 
 
-def download(update,auto_find):
+def download(update: bool,auto_find: bool) -> None:
     if(auto_find):
         last_page=find_last_page()
     else:
@@ -126,6 +127,9 @@ def download(update,auto_find):
         for div in posts_divs:
             if div.has_attr("class") and len(div["class"])>0:
                 class_name=div["class"][0]
+                #отладочный вывод, когда дайри-программист в очередной раз перепиливает разметку
+                #id_name=div["id"] if div.has_attr("id") else "[none]"
+                #print("Class:"+class_name+", id="+id_name)
                 if class_name == "day-header":
                     posts_dates_s.append(div.span.contents[0])
                     posts_dates.append(convert_date(div.span.contents[0]))
@@ -134,8 +138,8 @@ def download(update,auto_find):
                     posts_dates.append(convert_date(div.div.span.contents[0]))
                 test_name="postTitle"
                 if class_name == "post-header" or class_name == test_name:
-                    if test_epigraph(epigraph,test_name)==False:
-                        continue
+                    #if test_epigraph(epigraph,test_name)==False:
+                    #    continue
                     if len(posts_dates_s)!=len(posts_links)+1:#если для текущей записи не нашлось даты из-за двух записей в течение дня
                         posts_dates_s.append(posts_dates_s[-1])
                         posts_dates.append(posts_dates[-1])
@@ -157,8 +161,8 @@ def download(update,auto_find):
                         posts_titles.append("(closed)")
                 test_name="postLinksBackg"
                 if class_name == test_name:#старый дизайн
-                    if test_epigraph(epigraph,test_name)==False:
-                        continue
+                    #if test_epigraph(epigraph,test_name)==False:
+                    #    continue
                     posts_links.append(div.span.a["href"])
                     id_begin=div.span.a["href"].lower().find(s.link_marks[s.links_style].lower())+len(s.link_marks[s.links_style])
                     id_end=div.span.a["href"].rfind("_")
@@ -178,15 +182,15 @@ def download(update,auto_find):
                     print(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
                 test_name="postInner"
                 if class_name==test_name:
-                    if test_epigraph(epigraph,test_name)==False:
-                        continue
+                    #if test_epigraph(epigraph,test_name)==False:
+                    #   continue
                     posts_contents.append(div.prettify().replace('\r', '').replace('\n', ''))
                 if class_name == "post-inner":
                     posts_contents.append(div.prettify().replace('\r', '').replace('\n', ''))
                 test_name="postContent"
                 if class_name == test_name:
-                    if test_epigraph(epigraph,test_name)==False:
-                        continue
+                    #if test_epigraph(epigraph,test_name)==False:
+                    #    continue
                     tags=[]
                     post_tags=[]
                     posts_ps=div.find_all("p")

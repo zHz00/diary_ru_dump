@@ -1,5 +1,6 @@
 import pytest
 import sys
+import os
   
 sys.path.append('./')
 
@@ -23,14 +24,14 @@ from .. import update_times
 from .. import init
 '''
 
-def test_always_pass():
+def test_always_pass() -> None:
     assert True
 
 @pytest.mark.xfail
-def test_always_fail():
+def test_always_fail() -> None:
     assert False
 
-def test_new_design_file():
+def test_new_design_file() -> None:
     s.change_username("testname","")
     s.diary_url=s.test_folder+"new_design"
     s.diary_url_mode=2
@@ -39,16 +40,20 @@ def test_new_design_file():
     s.wait_time=5
     init.create_folders()
     init.reset_vault()
-    #init.reset_obsidian_settings
-    #init.reset_pics()
-    #init.reset_dump()
+    init.delete_obsidian_settings()
+    init.delete_pics()
+    init.delete_indexes()
+    init.delete_tags()
+
+    init.delete_dump()
+    '''
     download(update=False,auto_find=False)
     markdown_all_diary(reset=True)
     download_pics()
     replace_urls()
     create_indexes()
-    update_times()
-    #init.delete_folders()
+    update_times()'''
+    init.delete_folders()
 
 if __name__=="__main__":
     test_always_pass()

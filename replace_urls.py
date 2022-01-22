@@ -9,7 +9,7 @@ from pathlib import Path
 import settings as s
 import init
 
-def post_replace(file_name,str_from,str_to):
+def post_replace(file_name: str,str_from: str,str_to: str) -> None:
     post_r=open(file_name,"r",encoding=s.post_encoding)
     post_contents=post_r.read()
     post_r.close()
@@ -19,7 +19,7 @@ def post_replace(file_name,str_from,str_to):
     post_w.write(post_contents)
     post_w.close()
 
-def strip_post_id(url):
+def strip_post_id(url: str) -> str:
     for link_mark in s.link_marks:
         id_begin_raw=url.lower().find(link_mark.lower())
         if(id_begin_raw==-1):
@@ -31,7 +31,7 @@ def strip_post_id(url):
         return url[id_begin:id_end]
     return "-1"
 
-def replace_urls():
+def replace_urls() -> None:
 
     print("Stage 4 of 6: Replacing cross links...")
     print("Reading link lists...",end="")

@@ -50,10 +50,10 @@ stop=3860
 wait_time=60 #sec
 
 #Тут надо задать название блокнота для Obsidian
-base_folder="../zhz_diary_obsidian/"
+base_folder="../zhz00_diary_obsidian/"
 #base_folder="../zhz_diary_obsidian_nopics/"
 pics_folder="pics/"
-dump_folder="../dump_zhz00\\"
+dump_folder="../zhz00_dump/"
 indexes_folder="indexes/"
 days_folder="days/"
 tags_folder="tags/"
@@ -89,7 +89,7 @@ user_agent = {'User-agent': 'Mozilla/5.0'}
 
 settings_file_name="username.txt"
 
-def enter_username():
+def enter_username() -> None:
     uname=input("Please enter username:")
     session=input("Please paste session ID, if diary has restricted access (otherwise press enter)")
     settings_file=open(settings_file_name,"w",encoding=links_file_encoding)
@@ -97,14 +97,14 @@ def enter_username():
     settings_file.write(session)
     load_username()
 
-def load_username():
+def load_username() -> None:
     settings_file=open(settings_file_name,"r",encoding=links_file_encoding)
     uname=settings_file.readline().strip()
     session=settings_file.readline().strip()
     change_username(uname,session)
 
 
-def change_username(uname,session):
+def change_username(uname: str,session: str) -> None:
     global diary_url
     global link_marks
     global cross_link_checking
@@ -119,7 +119,7 @@ def change_username(uname,session):
         base_folder="../"+uname+"_diary_obsidian/"
     else:
         base_folder="../"+uname+"_diary_obsidian_nopics/"
-    dump_folder="../dump_"+uname+"\\"
+    dump_folder="../"+uname+"_dump/"
 
     if len(saved_cookies['_session'])<2:
         links_style=0
@@ -127,5 +127,6 @@ def change_username(uname,session):
         links_style=1
 
     init.create_folders()
-    
+
+ 
         

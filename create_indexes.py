@@ -2,6 +2,7 @@ import time
 import datetime
 import calendar
 import os
+import typing
 from win32_setctime import setctime
 import re
 
@@ -23,12 +24,12 @@ months_cols=3
 
 roman_month=["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"]
 
-def get_month(week,weekday_col):
+def get_month(week: int,weekday_col: int) -> int:
     month_col=int(weekday_col/days_in_week_markup)
     month_row=int(week/weeks_in_month)
     return months_cols*month_row+month_col
 
-def get_day(year,week,weekday_col):
+def get_day(year: int,week: int,weekday_col: int) -> int:
     if weekday_col%days_in_week_markup==days_in_week_markup-1:#последняя колонка -- пропуск
         return 0
     month=get_month(week,weekday_col)
@@ -42,7 +43,7 @@ def get_day(year,week,weekday_col):
         return 0
     return day_this_month
 
-def generate_post_list(post_links):
+def generate_post_list(post_links: typing.List[typing.List[str]]) -> str:
     post_date=datetime.datetime.fromtimestamp(post_links[0][0]).date()
     print(f"At {post_date.strftime('%Y-%m-%d')} we have {len(post_links)} posts...")
     bare_filename=s.day_list_prefix+post_date.strftime("%Y-%m-%d")+".md"
@@ -58,7 +59,7 @@ def generate_post_list(post_links):
     return bare_filename
 
 
-def generate_year(year,post_list):
+def generate_year(year: int,post_list: typing.List[typing.List[str]]) -> str:
     global days_with_no_posts
     global days_with_one_post
     global days_with_many_posts
@@ -114,7 +115,7 @@ def generate_year(year,post_list):
 
 
 
-def create_indexes():
+def create_indexes() -> None:
     print("Stage 5 of 6: Creating indexes...")
     print("Creating full list...",end="")
     file_list=os.listdir(s.base_folder)
@@ -169,7 +170,7 @@ def create_indexes():
 
     # III. Теперь сделаем список тегов
 
-    def find_key(voc,key):
+    def find_key(voc: typing.Dict,key: typing.Any) -> typing.Any:
         if key in voc:
             return key
         for actual_key in voc.keys():

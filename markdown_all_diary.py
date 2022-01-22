@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 import settings as s
 import init
 
-def markdown_all_diary(reset):
+def markdown_all_diary(reset: bool) -> None:
     print ("Stage 2 of 6: Creating markdown files from HTML...")
     if(reset==True):
         init.reset_vault()
