@@ -16,12 +16,19 @@ diary_url_mode=0
 #Нужны ли картинки?
 download_pics=True
 
+#Нужны ли исходные html-файлы? (для отладки)
+download_html=False
+
 def toggle_pics():
     global download_pics
     global uname
     global session
     download_pics=not download_pics
     change_username(uname,session)
+
+def toggle_html():
+    global download_html
+    download_html=not download_html
 
 
 #Тут надо придумать шаблон для поиска номеров постов. Если не знаете, что делать, замените "00" на необходимый ник.

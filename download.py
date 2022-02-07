@@ -96,10 +96,11 @@ def download(update: bool,auto_find: bool) -> None:
         if s.diary_url_mode!=2:
             page = requests.get(page_url,cookies=get_cookies())
 
-            # тестирование, работают куки или нет. отключено
-            #testpage=open("testpage.htm","w",encoding=s.post_encoding)
-            #testpage.write(page.text)
-            #testpage.close()
+            if s.download_html==True:
+                htmlfile_name=s.dump_folder+f"sheet{offset}.htm"
+                htmlfile=open(htmlfile_name,"w",encoding=s.post_encoding)
+                htmlfile.write(page.text)
+                htmlfile.close()
 
             page = BeautifulSoup(page.text, 'html.parser')
         else:

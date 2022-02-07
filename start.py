@@ -21,6 +21,7 @@ Stage 5: Create indexes
 Stage 6: Update creation times (Windows only)
 
 Working with pictures: {"Enabled" if s.download_pics==True else "Disabled"}
+Save HTML in addition: {"Enabled" if s.download_html==True else "Disabled"}
 Diary url: {s.diary_url}
 Output folder: {s.base_folder}
 
@@ -28,12 +29,13 @@ Possible scenarios:
 
 Stage:                     [  1  ][  2  ][  3  ][  4  ][  5  ][  6  ]
 
-A. Total (default)         [  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
+A. Total (default)        B [  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
 B. Update + markup         [ +/- ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
 C. Update (no markup)      [ +/- ][  -  ][  -  ][  -  ][  -  ][  -  ]
 D. Download (no markup)    [  +  ][  -  ][  -  ][  -  ][  -  ][  -  ]
 E. Markup                  [  -  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
-X. Change username
+W. Change username
+X. Toggle save html enable/disable mode (debug purpose)
 Y. Toggle pics enable/disable mode
 Z. Quit
 
@@ -52,6 +54,7 @@ s6=lambda: update_times()
 
 change_username_lambda=lambda: s.enter_username()
 toggle_pics_lambda=lambda: s.toggle_pics()
+toggle_html_lambda=lambda: s.toggle_html()
 
 scenarios={
     'A':[s1,	s2,	s3,	s4,	s5,	s6],
@@ -59,7 +62,8 @@ scenarios={
     'C':[s1u,	no,	no,	no,	no,	no],
     'D':[s1,	no,	no,	no,	no,	no],
     'E':[no,	s2,	s3,	s4,	s5,	s6],
-    'X':[change_username_lambda],
+    'W':[change_username_lambda],
+    'X':[toggle_html_lambda],
     'Y':[toggle_pics_lambda],
     'Z':[no]
 }
@@ -70,6 +74,7 @@ continue_execution={
     'C':False,
     'D':False,
     'E':False,
+    'W':True,
     'X':True,
     'Y':True,
     'Z':False,

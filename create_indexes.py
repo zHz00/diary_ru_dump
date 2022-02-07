@@ -3,7 +3,6 @@ import datetime
 import calendar
 import os
 import typing
-from win32_setctime import setctime
 import re
 
 import settings as s
@@ -170,7 +169,7 @@ def create_indexes() -> None:
 
     # III. Теперь сделаем список тегов
 
-    def find_key(voc: typing.Dict,key: typing.Any) -> typing.Any:
+    def find_key(voc: typing.Dict[str,typing.Any],key: str) -> str:
         if key in voc:
             return key
         for actual_key in voc.keys():
