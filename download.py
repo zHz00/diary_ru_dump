@@ -91,13 +91,13 @@ def download(update: bool,auto_find: bool) -> None:
     for offset in range(s.start, s.stop, step):
         page_url=s.diary_url+str(offset)
         if s.diary_url_mode==2:
-            page_url+=".htm"
+            page_url+=".html"
         print("Downloading "+page_url+"...")
         if s.diary_url_mode!=2:
             page = requests.get(page_url,cookies=get_cookies())
 
             if s.download_html==True:
-                htmlfile_name=s.dump_folder+f"sheet{offset}.htm"
+                htmlfile_name=s.dump_folder+f"sheet{offset}.html"
                 htmlfile=open(htmlfile_name,"w",encoding=s.post_encoding)
                 htmlfile.write(page.text)
                 htmlfile.close()
@@ -134,7 +134,7 @@ def download(update: bool,auto_find: bool) -> None:
                 if class_name == "day-header":
                     posts_dates_s.append(div.span.contents[0])
                     posts_dates.append(convert_date(div.span.contents[0]))
-                if class_name == "singlePost" and div.div.has_attr("class") and div.div["class"][0] == "countSecondDate":
+                if class_name == "singlePost" and div.find("div")!=None and div.div.has_attr("class") and div.div["class"][0] == "countSecondDate":
                     posts_dates_s.append(div.div.span.contents[0])
                     posts_dates.append(convert_date(div.div.span.contents[0]))
                 test_name="postTitle"

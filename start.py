@@ -29,7 +29,7 @@ Possible scenarios:
 
 Stage:                     [  1  ][  2  ][  3  ][  4  ][  5  ][  6  ]
 
-A. Total (default)        B [  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
+A. Total (default)         [  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
 B. Update + markup         [ +/- ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
 C. Update (no markup)      [ +/- ][  -  ][  -  ][  -  ][  -  ][  -  ]
 D. Download (no markup)    [  +  ][  -  ][  -  ][  -  ][  -  ][  -  ]

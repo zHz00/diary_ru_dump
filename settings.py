@@ -102,12 +102,16 @@ def enter_username() -> None:
     settings_file=open(settings_file_name,"w",encoding=links_file_encoding)
     settings_file.write(uname)
     settings_file.write(session)
+    settings_file.close()
     load_username()
 
 def load_username() -> None:
+    global uname
+    global session
     settings_file=open(settings_file_name,"r",encoding=links_file_encoding)
     uname=settings_file.readline().strip()
     session=settings_file.readline().strip()
+    settings_file.close()
     change_username(uname,session)
 
 
