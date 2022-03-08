@@ -128,8 +128,8 @@ def markdown_all_diary(reset: bool) -> None:
         f=open(s.dump_folder+post_trim,encoding=s.post_encoding,errors="ignore")
         contents=f.read().replace("\n","").replace("\r","").replace("</br>","<br/>").replace("<br>","<br/>")
         contents=contents.replace("<tbody>","").replace("</tbody>","")
-        contents=contents.replace("&gt;","\\&gt;")
-        contents=contents.replace("&lt;","\\&lt;")
+        #contents=contents.replace("&gt;","\\&gt;")
+        #contents=contents.replace("&lt;","\\&lt;")
         
         #добываем ссылки и картинки
         bs=BeautifulSoup(contents,"html.parser")
