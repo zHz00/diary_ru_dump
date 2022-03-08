@@ -10,6 +10,28 @@ from bs4 import BeautifulSoup
 import settings as s
 import init
 
+def remove_unwanted_escape(mk_str: str) -> str:
+    #надо кое-что сделать, а именно убрать все эскейпы созданные markdownify внутри блоков кода
+    pre_indexes=[pre.start() for pre in re.finditer('```', mk_str)]
+    pre_index_sets=[[]]
+    for idx in pre_indexes:
+        if len(pre_index_sets[-1])>=2:
+            pre_index_sets.append([])
+        pre_index_sets[-1].append(idx)
+    chunk_sets=[[0]]
+    for set in pre_index_sets:
+        if len(set)!=2:
+            return mk_str#не собрали ничего, так что сразу возвращаем как есть
+        chunk_sets[-1].append(set[0])
+        chunk_sets[-1].append(set[1])
+        chunk_sets.append([set[1]])
+    chunk_sets[-1].append([len(mk_str),len(mk_str)])
+    mk_str_res=""
+    for chunk in chunk_sets:
+        mk_str_res+mk_str[:chunk[0]]
+        mk_str_res+=mk_str[chunk[1]:chunk[2]].replace("\\","")
+    return mk_str_res
+
 def markdown_all_diary(reset: bool) -> None:
     print ("Stage 2 of 6: Creating markdown files from HTML...")
     if(reset==True):
@@ -104,7 +126,10 @@ def markdown_all_diary(reset: bool) -> None:
 
 
         f=open(s.dump_folder+post_trim,encoding=s.post_encoding,errors="ignore")
-        contents=f.read().replace("\n","").replace("\r","")
+        contents=f.read().replace("\n","").replace("\r","").replace("</br>","<br/>").replace("<br>","<br/>")
+        contents=contents.replace("<tbody>","").replace("</tbody>","")
+        contents=contents.replace("&gt;","\\&gt;")
+        contents=contents.replace("&lt;","\\&lt;")
         
         #добываем ссылки и картинки
         bs=BeautifulSoup(contents,"html.parser")
