@@ -87,6 +87,8 @@ def download(update: bool,auto_find: bool) -> None:
         step=1
     if s.diary_url_mode==1 and s.start>s.stop:
         step=-1
+
+    saved_pages=0
         
     for offset in range(s.start, s.stop, step):
         page_url=s.diary_url+str(offset)
@@ -225,7 +227,7 @@ def download(update: bool,auto_find: bool) -> None:
             #метаданные собираем в отдельный файл
 
             post_meta_file_name=s.dump_folder+"p"+posts_ids[x]+".txt"
-            if Path(post_meta_file_name).is_file() and update==True:
+            if Path(post_meta_file_name).is_file() and update==True and saved_pages>2:#вторая страница имеет дубликаты, поэтому её принудительно сохранять, а только потом проверять на повторы
                 #всё, дошли до старых постов
                 print("Update complete, found old posts.")
                 return #!
@@ -271,6 +273,7 @@ def download(update: bool,auto_find: bool) -> None:
             out_post.write(out_page.prettify())
             out_post.close()
 
+        saved_pages+=1
         print(f"Done saving. Waiting for {s.wait_time} sec...")
         time.sleep(s.wait_time)
 
