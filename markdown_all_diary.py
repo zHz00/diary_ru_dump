@@ -1,4 +1,4 @@
-from markdownify import markdownify as markdownify
+import markdownify
 from os import getcwd, path
 from os import walk
 from os import listdir
@@ -9,6 +9,34 @@ from bs4 import BeautifulSoup
 
 import settings as s
 import init
+
+def normalize_to_prev_ver(text: str) -> str:
+    #после перехода на lxml парсер по неясной причине мд-файлы выглядят немного не так, как должны
+    #чтобы в ГИТе сравнение с предыдущими версиями работало нормально, надо кое-что добавить, а кое-что убрать. этим и займёмся
+    text_lines=text.split("\n")
+    text_lines[1]=text_lines[1]+"="
+    #print("3:["+text_lines[3]+"]")
+    text_lines[3]=text_lines[3]+" "
+    #print("4:["+text_lines[4]+"]")
+    text_lines[4]=" "+text_lines[4]+" "
+    tags_line=0
+    for x in range(len(text_lines)-1,-1,-1):
+        if text_lines[x].find("Теги:")!=-1:
+            tags_line=x
+            break
+    text_lines[tags_line-3]=" "+text_lines[tags_line-3]
+    text_lines[tags_line-2]=" "+text_lines[tags_line-2]+" "
+    text_lines[tags_line-1]=" "+text_lines[tags_line-1]
+    text_lines[tags_line]=" "+text_lines[tags_line]+" "
+    for x in range(tags_line,len(text_lines)-1):
+        if len(text_lines[x])>0 and text_lines[x][0]=='[':#строчка с тегом
+            text_lines[x]=" "+text_lines[x]
+    #теперь надо убрать пустые строки в конце
+    for x in range(len(text_lines)-1,tags_line,-1):
+        if len(text_lines[x])==0:
+            del text_lines[x]
+    text_lines[-1]=" "+text_lines[-1]#ID:
+    return "\n".join(text_lines)
 
 def remove_unwanted_escape(mk_str: str) -> str:
     #надо кое-что сделать, а именно убрать все эскейпы созданные markdownify внутри блоков кода
@@ -32,11 +60,15 @@ def remove_unwanted_escape(mk_str: str) -> str:
         mk_str_res+=mk_str[chunk[1]:chunk[2]].replace("\\","")
     return mk_str_res
 
-def markdown_all_diary(reset: bool) -> None:
+def markdown_all_diary(reset: bool,post_id:int=0) -> None:
     print ("Stage 2 of 6: Creating markdown files from HTML...")
     if(reset==True):
         init.reset_vault()
-    file_list=listdir(s.dump_folder)
+        
+    if(post_id==0):
+        file_list=listdir(s.dump_folder)
+    else:
+        file_list=["p"+str(post_id)+".htm"]
 
     file_list_out=file_list.copy()
 
@@ -134,6 +166,8 @@ def markdown_all_diary(reset: bool) -> None:
         #добываем ссылки и картинки
         bs=BeautifulSoup(contents,"html.parser")
         for pic in bs.find_all("img"):
+            if pic.parent.name=="pre" or pic.parent.parent.name=="pre":
+                continue
             pic1={}
             pic1['id']=meta[0].strip()
             pic1['name']=out_name_file
@@ -171,7 +205,13 @@ def markdown_all_diary(reset: bool) -> None:
 
         #линуксовые концы строк т.к. обсидиан всё равно их заменит
         f_out=open(out_name,"w",encoding=s.post_encoding,errors="ignore",newline='\n')
-        f_out.write(markdownify(contents).strip())
+        if s.diary_url_mode==3:
+            out_contents=markdownify.markdownify(contents,strong_em_symbol=markdownify.UNDERSCORE,escape_asterisks=True).strip()
+        else:
+            out_contents=markdownify.markdownify(contents).strip()
+            out_contents=normalize_to_prev_ver(out_contents)
+        out_len=len(out_contents)
+        f_out.write(out_contents)
         f_out.close()
         f.close()
 
@@ -192,6 +232,10 @@ def markdown_all_diary(reset: bool) -> None:
     pics_file.close()
 
     print(f"\nend (markdown). All={len(file_list_out)}, renamed={renamed_count}, tags={tag_count}")
+    if s.diary_url_mode==3:
+        return out_name,out_len
+    else:
+        return 0
 
 if __name__=="__main__":
     init.create_folders()

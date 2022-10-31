@@ -1,17 +1,29 @@
 import init
-version=4
+version=6
 
 uname="zHz00"
 session=""
 
 #Замените в следующей настройке мой ник на необходимый
 diary_url='https://diary.ru/~zHz00?oam&rfrom='
+diary_url_pretty='https://zhz00.diary.ru/'
+
 #diary_url='https://zhz00.diary.ru/?tag=33243&n=t&page='
 
 # 0 -- режим постов -- 20, 40, 60 и т.п.
 # 1 -- режим страниц, если скачиваем по тегу, 1, 2, 3 и т.п.
 # 2 -- режим файла
+# 3 -- режим одного поста
 diary_url_mode=0
+
+tg_max_len=6000
+tg_max_pics=3
+tg_post_len=3500
+tg_pic_len=128
+tg_max_retries=3
+tg_ph_token=""
+tg_channel_token=""
+tg_channel_name=""
 
 #Нужны ли картинки?
 download_pics=True
@@ -42,10 +54,11 @@ pic_checking=[".jpg",".jpeg",".png",".gif"]
 #Для открытых дневников задайте все три ключа как пустые строки. Для закрытых возьмите значения кукисов из своего браузера.
 saved_cookies={'_session':''}
 
-if len(saved_cookies['_session'])<2:
-    links_style=0
-else:
-    links_style=1
+#if len(saved_cookies['_session'])<2:
+#    links_style=0
+#else:
+ #   links_style=1
+links_style=1
 
 
 #Диапазон страниц. Минимальный, как правило, 20, при этом первый пост может не попасть в список. Максимальный можно вычислить, зайдя на дневник и посмотрев адреса первой страницы
@@ -95,6 +108,7 @@ forbidden_pic_urls=["google.ru/search?q=","google.com/search?q=","chan.sankakust
 user_agent = {'User-agent': 'Mozilla/5.0'}
 
 settings_file_name="username.txt"
+tokens_file_name="tokens.txt"
 
 def enter_username() -> None:
     uname=input("Please enter username:")
@@ -113,6 +127,18 @@ def load_username() -> None:
     session=settings_file.readline().strip()
     settings_file.close()
     change_username(uname,session)
+    
+def load_tokens():
+    global tg_ph_token
+    global tg_channel_token
+    global tg_channel_name
+    tokens_file=open(tokens_file_name,"r",encoding=links_file_encoding)
+    tg_ph_token=tokens_file.readline().strip()
+    tg_channel_token=tokens_file.readline().strip()
+    tg_channel_name=tokens_file.readline().strip()
+    print("Len of telegraph token: "+str(len(tg_ph_token)))
+    print("Len of bot token: "+str(len(tg_channel_token)))
+    print("Loaded channel name: "+tg_channel_name)
 
 
 def change_username(uname: str,session: str) -> None:
@@ -126,16 +152,20 @@ def change_username(uname: str,session: str) -> None:
     link_marks=[uname+"/p",uname+".diary.ru/p"]
     cross_link_checking=[uname+".diary.ru/","/~"+uname+"/"]
     saved_cookies['_session']=session
-    if download_pics:
-        base_folder="../"+uname+"_diary_obsidian/"
+    if diary_url_mode==3:
+        base_folder="../"+uname+"_diary_obsidian_temp/"
     else:
-        base_folder="../"+uname+"_diary_obsidian_nopics/"
+        if download_pics:
+            base_folder="../"+uname+"_diary_obsidian/"
+        else:
+            base_folder="../"+uname+"_diary_obsidian_nopics/"
     dump_folder="../"+uname+"_dump/"
 
-    if len(saved_cookies['_session'])<2:
-        links_style=0
-    else:
-        links_style=1
+#    if len(saved_cookies['_session'])<2:
+#        links_style=0
+#    else:
+#        links_style=1
+    links_style=1
 
     init.create_folders()
 

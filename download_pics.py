@@ -61,6 +61,7 @@ def download_pics() -> None:
     n=0
 
     warnings=[]
+    pic_names_for_replace=[]
 
     for line in pics_list_text:
         phase+=1
@@ -75,6 +76,7 @@ def download_pics() -> None:
         percentage=int(n/total_pics*100)
         percentage_header=f"[{percentage}%]"
         pic_name=os.path.basename(urlparse(line.strip()).path).strip()
+        pic_names_for_replace.append([line,pic_name])
         if pic_name=='':
             #почему имя оказалось пустым?
             warning="WARNING! URL is empty! line=["+line+"]"
@@ -137,6 +139,10 @@ def download_pics() -> None:
         print(warning)
 
     print(f"Done. Downloaded={pic_counter}, skipped={pic_skipped}, errors={pic_errors}")
+    if s.diary_url_mode==3:
+        return pic_names_for_replace
+    else:
+        return 0
 
 if __name__=="__main__":
     init.create_folders()
