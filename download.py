@@ -390,7 +390,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                 if s.diary_url_mode!=3:
                     out_page.find("body").append(BeautifulSoup("[["+re.sub(r'[\\/*?:"<>|]',"",tag).strip()+"]] <br />", 'lxml'))
                 else:
-                    out_page.find("body").append(BeautifulSoup("<div>#"+re.sub(r'[\\/*?:"<>|]',"",tag).replace(" ","_").strip()+"</div><br />", 'lxml'))
+                    out_page.find("body").append(BeautifulSoup("<div>#"+re.sub(r'[\\/*?:"<>|]',"",tag).replace(" ","_").replace("-","_").strip()+"</div><br />", 'lxml'))
 
             if s.diary_url_mode!=3:
                 out_page.find("body").append(BeautifulSoup("ID: p"+posts_ids[x]+"<br />", 'lxml'))

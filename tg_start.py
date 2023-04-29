@@ -27,6 +27,7 @@ def post_to_tgph(post_id,img_list):
         print("Replacing "+img[0]+" to "+img[1])
         html_text=html_text.replace(img[0].strip(),img[1])
     node_text=tg_ph.html_to_node(html_text)
+    node_text=node_text.replace(',"children":[]','')#сократим размер
     node_out=open(s.dump_folder+"p"+str(post_id)+"node.txt","w",encoding="utf-8")
     node_out.write(node_text)
     node_out.close()

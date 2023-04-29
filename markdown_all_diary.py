@@ -19,12 +19,13 @@ def normalize_to_prev_ver(text: str) -> str:
     text_lines[3]=text_lines[3]+" "
     #print("4:["+text_lines[4]+"]")
     text_lines[4]=" "+text_lines[4]+" "
+    text_lines[5]=" "+text_lines[5]
     tags_line=0
     for x in range(len(text_lines)-1,-1,-1):
         if text_lines[x].find("Теги:")!=-1:
             tags_line=x
             break
-    text_lines[tags_line-3]=" "+text_lines[tags_line-3]
+    text_lines[tags_line-3]="  "+text_lines[tags_line-3]
     text_lines[tags_line-2]=" "+text_lines[tags_line-2]+" "
     text_lines[tags_line-1]=" "+text_lines[tags_line-1]
     text_lines[tags_line]=" "+text_lines[tags_line]+" "
@@ -210,6 +211,8 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         else:
             out_contents=markdownify.markdownify(contents).strip()
             out_contents=normalize_to_prev_ver(out_contents)
+        #макрдаун этого не умеет, поэтому вручную сделаем зачёркивание!
+        #out_contents=out_contents.replace("~~","~")
         out_len=len(out_contents)
         f_out.write(out_contents)
         f_out.close()

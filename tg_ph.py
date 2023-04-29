@@ -34,7 +34,7 @@ def pretty_print_POST(req):
         req.body,
     ))
     
-def upload_image(file,retries=3):
+def upload_image(file,retries=5):
     #open(file,"rb").close()
     #return "[TEST1]"+file+"[TEST2]"
     print("Uploading: "+file+";remaining tries:"+str(retries))
@@ -50,8 +50,19 @@ def upload_image(file,retries=3):
         else:
             print("ERROR:"+str(res_dict))
             return None
-    except:
+    except requests.ConnectionError as e:
         image_file.close()
+        print(e)
+        print("Exception occured. Waiting...")
+        time.sleep(20)
+        if(retries>0):
+            return upload_image(file,retries-1)
+        else:
+            print("What a pity, no connection. Aborting")
+            return None
+    except json.JSONDecodeError as e:
+        image_file.close()
+        print(e)
         print("Exception occured. Waiting...")
         time.sleep(20)
         if(retries>0):
@@ -61,11 +72,11 @@ def upload_image(file,retries=3):
             return None
 
     
-def create_page(title,content,retries=3):
+def create_page(title,content,retries=5):
     print("Creating page... retries:"+str(retries))
-    data={"access_token":__token.encode("utf-8"),"title":title.encode("utf-8"),"content":content.encode("utf-8")}
+    data={"access_token":__token.encode("utf-8"),"title":title.encode("utf-8"),"author_name":s.tg_channel_name,"author_url":"https://t.me/"+s.tg_channel_name[1:],"content":content.encode("utf-8")}
     try:
-        res=requests.post(req_prefix+"createPage",data=data);
+        res=requests.post(req_prefix+"createPage",data=data)
     except:
         print("error during posting. waiting...")
         time.sleep(s.wait_time)
@@ -76,7 +87,15 @@ def create_page(title,content,retries=3):
     print("Done. Results:")
     print(res.headers)
     print(res.content)
-    res_dict=json.loads(res.content.decode("cp437"))
+    try:
+        res_dict=json.loads(res.content.decode("cp437"))
+    except:
+        print("Answer is not JSON. Retrying after pause...")
+        time.sleep(s.wait_time)
+        if(retries>0):
+            return create_page(title,content,retries-1)
+        else:
+            return None
     if "ok" in res_dict:
         if res_dict["ok"]==False:
             print("ERROR:"+res_dict["error"])

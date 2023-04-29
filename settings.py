@@ -154,12 +154,13 @@ def change_username(uname: str,session: str) -> None:
     saved_cookies['_session']=session
     if diary_url_mode==3:
         base_folder="../"+uname+"_diary_obsidian_temp/"
+        dump_folder="../"+uname+"_dump_temp/"
     else:
+        dump_folder="../"+uname+"_dump/"
         if download_pics:
             base_folder="../"+uname+"_diary_obsidian/"
         else:
             base_folder="../"+uname+"_diary_obsidian_nopics/"
-    dump_folder="../"+uname+"_dump/"
 
 #    if len(saved_cookies['_session'])<2:
 #        links_style=0
