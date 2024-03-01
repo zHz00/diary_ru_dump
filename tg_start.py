@@ -94,8 +94,8 @@ def divide_post(post_id,md_post_name):
             posts.append(line)
         if len(line.strip())>0 and unbreakable_start+1!=len(posts):#если флаг выставлен только что, сбрасывать не надо
             unbreakable=False
-        if len(line.strip())>0:
-            prev_line=line
+        #if len(line.strip())>0:
+        prev_line=line
         
     posts.append(SEPARATOR)
     for p in posts:
@@ -113,6 +113,7 @@ def divide_post(post_id,md_post_name):
 
 def post_to_tgch(post_id,img_list,md_post_name):
     divided_post=divide_post(post_id,md_post_name)
+    print(divided_post)
     text=""
     token=s.tg_channel_token
     chat_id=s.tg_channel_name
@@ -144,10 +145,13 @@ def post_to_tgch(post_id,img_list,md_post_name):
                 continue
             if divided_post[x].strip().startswith("[![]") or divided_post[x].strip().startswith("![]"):
                 #постим картинку
-                if x<len(divided_post)+1 and divided_post[x+1] is CAPTION:
+                caption=""
+                if x<len(divided_post)-1 and divided_post[x+1] is CAPTION:
                     caption=divided_post[x+2]
-                else:
-                    caption=""
+                #if x<len(divided_post)-2 and divided_post[x+2] is CAPTION:
+                #    caption=divided_post[x+3]
+                #в каком-то смысле это костыль: делать отдельный случай, если подпись сразу после картинки, и если есть пустая строка.
+                #с другой стороны, если после картинки больше одной пустой строки, то, возможно, это вовсе не подпись
                 img_file=""
                 for img in img_list:
                     print("searching "+img[0].strip()+" in "+divided_post[x])
