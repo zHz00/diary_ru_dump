@@ -9,7 +9,7 @@ import init
 
 
 hello_message=lambda:f'''diary.ru dump utility, version {s.version}.
-(C) zHz, 2022. Licenced under MIT license, see readme.txt for details.
+(C) zHz, 2022-2024. Licenced under MIT license, see readme.txt for details.
 
 Diary dump consists of six stages:
 

@@ -98,7 +98,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
 
         #сохраним теги
 
-        tags=meta[5:]
+        tags=meta[6:]
         for tag in tags:
             if len(tag.strip())==0:#у нас последняя строчка пустая. ну и на случай если другие пустые будут
                 continue

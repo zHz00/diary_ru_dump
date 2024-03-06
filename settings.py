@@ -1,5 +1,5 @@
 import init
-version=6
+version=7
 
 uname="zHz00"
 session=""
@@ -109,6 +109,8 @@ user_agent = {'User-agent': 'Mozilla/5.0'}
 
 settings_file_name="username.txt"
 tokens_file_name="tokens.txt"
+
+db_name="posts.db"
 
 def enter_username() -> None:
     uname=input("Please enter username:")

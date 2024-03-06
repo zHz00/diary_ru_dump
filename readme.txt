@@ -30,7 +30,7 @@ III. Порядок настройки
 Эти действия делаются только один раз.
 
 1. Создать рабочую папку, допустим, c:\diary
-2. Создать папки c:\diary\scripts
+2. Создать папку c:\diary\scripts
 3. Распаковать или сделать чекаут данного репозитория в c:\diary\scripts\
 
 При первом запуске скриптов будет создано необходимое дерево папок. Привожу его ниже с комментарием, где что лежит:
@@ -91,7 +91,7 @@ VII. Авторство
 Скрипты написаны мной, zHz (zHz00). Электронная почта для связи: zHz00@rambler.ru
 Файлы распространяются по лицензии MIT, привожу ниже её текст.
 
-Copyright (c) 2022 zHz
+Copyright (c) 2022-2024 zHz
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -222,6 +222,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         posts_dates_s=[]
         posts_times_s=[]
         posts_contents=[]
+        posts_comments_n=[]
         posts_tags=[]
 
         posts_ids=[]
@@ -317,6 +318,15 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                     if len(post_tags)==0:#бывают посты без тегов. чтобы их отловить, мы ищем блок с тегами ТОЛЬКО внутри текущего дива. если его нет, ставим специальный тег, что тегов нет
                         post_tags.append("None")
                     posts_tags.append(post_tags)
+                comments_n=0
+                if class_name=="right" or class_name=="postLinksBackg":#как ни странно, это счётчик комментариев! для нового и старого дизайна соответственно
+                    spans=div.find_all("span")
+                    for span in spans:
+                        if span.has_attr("class"):
+                            if span["class"][0]=="comments_count_link":
+                                comments_n=spans[0].a.contents[0]
+                    posts_comments_n.append(comments_n)
+
                     
 
 
@@ -352,6 +362,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
             out_meta.write(f"{posts_dates[x]}\n")
             out_meta.write(f"{posts_times_s[x]}\n")
             out_meta.write(f"{posts_titles[x]}\n")
+            out_meta.write(f"{posts_comments_n[x]}\n")
             for tag in posts_tags[x]:
                 out_meta.write(f"{tag}\n")
             out_meta.write("\n")
