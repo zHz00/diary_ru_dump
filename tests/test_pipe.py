@@ -34,7 +34,7 @@ def test_always_fail() -> None:
 def test_new_design_file() -> None:
     s.change_username("testname","")
     s.diary_url=s.test_folder+"new_design"
-    s.diary_url_mode=2
+    s.diary_url_mode=s.dum.from_file
     s.start=20
     s.stop=20
     s.wait_time=5

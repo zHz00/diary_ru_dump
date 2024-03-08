@@ -1,4 +1,5 @@
 import init
+import enum
 version=7
 
 uname="zHz00"
@@ -10,11 +11,17 @@ diary_url_pretty='https://zhz00.diary.ru/'
 
 #diary_url='https://zhz00.diary.ru/?tag=33243&n=t&page='
 
+class dum(enum.Enum):
+    full=0
+    by_tag=1
+    from_file=2
+    one_post=3
+
 # 0 -- режим постов -- 20, 40, 60 и т.п.
 # 1 -- режим страниц, если скачиваем по тегу, 1, 2, 3 и т.п.
 # 2 -- режим файла
 # 3 -- режим одного поста
-diary_url_mode=0
+diary_url_mode=dum.full
 
 tg_max_len=6000
 tg_max_pics=3
@@ -71,6 +78,7 @@ wait_time=60 #sec
 
 #Тут надо задать название блокнота для Obsidian
 base_folder="../zhz00_diary_obsidian/"
+base_folder_db="../zhz00_diary_obsidian_db/"
 #base_folder="../zhz_diary_obsidian_nopics/"
 pics_folder="pics/"
 dump_folder="../zhz00_dump/"
@@ -148,19 +156,21 @@ def change_username(uname: str,session: str) -> None:
     global link_marks
     global cross_link_checking
     global base_folder
+    global base_folder_db
     global dump_folder
     global links_style
     diary_url='https://diary.ru/~'+uname+'?oam&rfrom='
     link_marks=[uname+"/p",uname+".diary.ru/p"]
     cross_link_checking=[uname+".diary.ru/","/~"+uname+"/"]
     saved_cookies['_session']=session
-    if diary_url_mode==3:
+    if diary_url_mode==dum.one_post:
         base_folder="../"+uname+"_diary_obsidian_temp/"
         dump_folder="../"+uname+"_dump_temp/"
     else:
         dump_folder="../"+uname+"_dump/"
         if download_pics:
             base_folder="../"+uname+"_diary_obsidian/"
+            base_folder_db="../"+uname+"_diary_obsidian_db/"
         else:
             base_folder="../"+uname+"_diary_obsidian_nopics/"
 

@@ -105,7 +105,7 @@ def download_pics() -> None:
             continue
         print(percentage_header+"Downloading "+pic_url+"...")
 
-        if s.diary_url_mode!=2:
+        if s.diary_url_mode!=s.dum.from_file:
             try:
                 pic=requests.get(pic_url,verify=False,headers=s.user_agent)
             except:
@@ -139,7 +139,7 @@ def download_pics() -> None:
         print(warning)
 
     print(f"Done. Downloaded={pic_counter}, skipped={pic_skipped}, errors={pic_errors}")
-    if s.diary_url_mode==3:
+    if s.diary_url_mode==s.dum.one_post:
         return pic_names_for_replace
     else:
         return 0

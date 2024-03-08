@@ -205,7 +205,7 @@ def post_short_to_tgch(post_id,tgph_url):
     
 
 def main():
-    s.diary_url_mode=3#отдельный пост
+    s.diary_url_mode=s.dum.one_post#отдельный пост
     s.load_username()
     s.load_tokens()
     s.wait_time=20

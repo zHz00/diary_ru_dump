@@ -11,6 +11,7 @@ from pathlib import Path
 import settings as s
 import init
 import typing
+import db
 
 def convert_to_old_style(url: str) -> str:
     #новые ссылки типа имя.дайари.ру/ должны быть превращены в дайари.ру/~имя, чтобы совпадало со старыми дампами
@@ -159,7 +160,10 @@ def test_epigraph(epigraph: typing.Dict[str,bool],test_name: str) -> bool:
 
 
 def download(update: bool,auto_find: bool,post_id:int=0) -> None:
-    if(post_id==0 and s.diary_url_mode==3):
+    db.connect()
+    if s.diary_url_mode==s.dum.full:
+        db.reset_posts()
+    if(post_id==0 and s.diary_url_mode==s.dum.one_post):
         post_id=find_last_post()
     if(auto_find):
         last_page=find_last_page()
@@ -176,15 +180,15 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
     step=20
 
-    if s.diary_url_mode==0 and s.start<=s.stop:
+    if s.diary_url_mode==s.dum.full and s.start<=s.stop:
         step=20
-    if s.diary_url_mode==0 and s.start>s.stop:
+    if s.diary_url_mode==s.dum.full and s.start>s.stop:
         step=-20
-    if s.diary_url_mode==1 and s.start<=s.stop:
+    if s.diary_url_mode==s.dum.by_tag and s.start<=s.stop:
         step=1
-    if s.diary_url_mode==1 and s.start>s.stop:
+    if s.diary_url_mode==s.dum.by_tag and s.start>s.stop:
         step=-1
-    if s.diary_url_mode==3:
+    if s.diary_url_mode==s.dum.one_post:
         s.start=0
         s.stop=1
         step=1
@@ -192,16 +196,16 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
     saved_pages=0
         
     for offset in range(s.start, s.stop, step):
-        if s.diary_url_mode!=3:
+        if s.diary_url_mode!=s.dum.one_post:
             page_url=s.diary_url+str(offset)
         else:
             qmark_index=s.diary_url.find("?")
             page_url=s.diary_url[:qmark_index]+"/p"+str(post_id)+".htm"+s.diary_url[qmark_index:]
             print("Page url="+page_url)
-        if s.diary_url_mode==2:
+        if s.diary_url_mode==s.dum.from_file:
             page_url+=".html"
         print("Downloading "+page_url+"...")
-        if s.diary_url_mode!=2:
+        if s.diary_url_mode!=s.dum.from_file:
             page = requests.get(page_url,cookies=get_cookies(),verify=False)
 
             if s.download_html==True:
@@ -343,7 +347,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         out_page=BeautifulSoup(fish,"lxml")
         #это не соответствует в3ц, ну и ладно
         
-        if s.diary_url_mode==3:
+        if s.diary_url_mode==s.dum.one_post:
             posts_ids=[posts_ids[0]]
         #там может ещё что-то обнаружиться в комментариях, но комментарии надо отдельно парсить, этого пока нет
         print("writing posts: "+str(len(posts_ids)))
@@ -372,7 +376,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
             title_header=BeautifulSoup("<h1></h1>", 'lxml')
             title_header.find("h1").string=posts_titles[x]
-            if s.diary_url_mode!=3:
+            if s.diary_url_mode!=s.dum.one_post:
                 out_page.find("body").append(title_header)
                 out_page.find("body").append(BeautifulSoup("<br />", 'lxml'))
 
@@ -386,7 +390,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
             title_url=title_header.new_tag("a",href=posts_links[x])
             
-            if s.diary_url_mode!=3:
+            if s.diary_url_mode!=s.dum.one_post:
                 title_url.string=posts_links[x]
                 out_page.find("body").append(title_url)
                 out_page.find("body").append(BeautifulSoup("<br />", 'lxml'))
@@ -398,27 +402,29 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
 
             for tag in posts_tags[x]:
-                if s.diary_url_mode!=3:
+                if s.diary_url_mode!=s.dum.one_post:
                     out_page.find("body").append(BeautifulSoup("[["+re.sub(r'[\\/*?:"<>|]',"",tag).strip()+"]] <br />", 'lxml'))
                 else:
                     out_page.find("body").append(BeautifulSoup("<div>#"+re.sub(r'[\\/*?:"<>|]',"",tag).replace(" ","_").replace("-","_").strip()+"</div><br />", 'lxml'))
 
-            if s.diary_url_mode!=3:
+            if s.diary_url_mode!=s.dum.one_post:
                 out_page.find("body").append(BeautifulSoup("ID: p"+posts_ids[x]+"<br />", 'lxml'))
 
             out_post=open(s.dump_folder+"p"+posts_ids[x]+".htm","w",encoding=s.post_encoding)
             out_post.write(str(out_page))
             out_post.close()
 
+            db.add_post(int(posts_ids[x]),posts_links[x],posts_dates[x],posts_times_s[x],posts_titles[x],posts_comments_n[x],posts_tags[x],posts_contents[x])
+
         saved_pages+=1
         print(f"Done saving. Waiting for {s.wait_time} sec...")
         time.sleep(s.wait_time)
 
 
-
+    db.close()
 
     print(f"Done. Downloadaed {len(posts_ids)} posts.")
-    if s.diary_url_mode==3:#скачал один пост -- сообщи ид выше
+    if s.diary_url_mode==s.dum.one_post:#скачал один пост -- сообщи ид выше
         return post_id
 
 
