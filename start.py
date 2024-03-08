@@ -29,11 +29,11 @@ Possible scenarios:
 
 Stage:                     [  1  ][  2  ][  3  ][  4  ][  5  ][  6  ]
 
-A. Total (default)         [  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
-B. Update + markup         [ +/- ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
+A. Total (default)         [  +  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
+B. Update + markup         [ +/- ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
 C. Update (no markup)      [ +/- ][  -  ][  -  ][  -  ][  -  ][  -  ]
 D. Download (no markup)    [  +  ][  -  ][  -  ][  -  ][  -  ][  -  ]
-E. Markup                  [  -  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ][  +  ]
+E. Markup                  [  -  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
 W. Change username
 X. Toggle save html enable/disable mode (debug purpose)
 Y. Toggle pics enable/disable mode

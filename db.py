@@ -42,14 +42,14 @@ def create_db():
     if db_link is None:
         connect(False)
     db_cursor.execute('''
-    CREATE TABLE TAGS
+    CREATE TABLE IF NOT EXISTS TAGS
     (
         TAG_ID INTEGER PRIMARY KEY AUTOINCREMENT,
         TAG TEXT
     )
     ''')
     db_cursor.execute('''
-    CREATE TABLE POSTS
+    CREATE TABLE IF NOT EXISTS POSTS
     (
         POST_ID INTEGER PRIMARY KEY,
         URL TEXT,
@@ -61,14 +61,14 @@ def create_db():
     )
     ''')
     db_cursor.execute('''
-    CREATE TABLE TAGS_LINKED
+    CREATE TABLE IF NOT EXISTS TAGS_LINKED
     (
         POST_ID INTEGER,
         TAG_ID INTEGER
     )
     ''')    
     db_cursor.execute('''
-    CREATE TABLE COMMENTS
+    CREATE TABLE IF NOT EXISTS COMMENTS
     (
         COMMENT_ID INTEGER PRIMARY KEY,
         POST_ID INTEGER,
@@ -79,7 +79,7 @@ def create_db():
     )
     ''')
     db_cursor.execute('''
-    CREATE TABLE PICS
+    CREATE TABLE IF NOT EXISTS PICS
     (
         POST_ID INTEGER,
         POST_FNAME TEXT,
@@ -87,15 +87,16 @@ def create_db():
     )
     ''')
     db_cursor.execute('''
-    CREATE TABLE LINKS
+    CREATE TABLE IF NOT EXISTS LINKS
     (
         POST_ID INTEGER,
         POST_FNAME TEXT,
+        DEST_POST_ID INTEGER,
         URL TEXT
     )
     ''')
     db_cursor.execute('''
-    CREATE INDEX TAGS_LINKED_INDEX
+    CREATE INDEX IF NOT EXISTS TAGS_LINKED_INDEX
     ON TAGS_LINKED(POST_ID)
     ''')
     db_link.commit()
@@ -164,7 +165,7 @@ def add_pic(post_id,post_fname,url):
         res=db_ret.already_exists
     db_link.commit()
 
-def add_link(post_id,post_fname,url):
+def add_link(post_id,post_fname,dest_post_id,url):
     global db_cursor
     res=db_ret.unknown
     db_cursor.execute('''
@@ -172,8 +173,8 @@ def add_link(post_id,post_fname,url):
     ''',(post_id,url))#проверяем только ИД поста, а имя файла не проверяем. рано или поздно это может привести к проблемам!
     if len(db_cursor.fetchall())==0:
         db_cursor.execute('''
-        INSERT INTO LINKS (POST_ID,POST_FNAME,URL) VALUES (?,?,?)
-        ''',(post_id,post_fname,url))
+        INSERT INTO LINKS (POST_ID,POST_FNAME,DEST_POST_ID,URL) VALUES (?,?,?,?)
+        ''',(post_id,post_fname,dest_post_id,url))
         res=db_ret.inserted
     else:
         res=db_ret.already_exists
@@ -225,6 +226,71 @@ def get_posts_list():
         list.append(int(id['POST_ID']))
     return list
 
+def get_pics_list_plain():
+    global db_cursor
+    db_cursor.execute('''
+    SELECT URL FROM PICS
+    ''')
+    fetch=db_cursor.fetchall()
+    list=[]
+    for pic in fetch:
+        list.append(pic['URL'])
+    return list
+
+def get_links_list_plain():
+    global db_cursor
+    db_cursor.execute('''
+    SELECT URL FROM LINKS
+    ''')
+    fetch=db_cursor.fetchall()
+    list=[]
+    for link in fetch:
+        list.append(link['URL'])
+    return list
+
+def get_pics_list_dict():
+    global db_cursor
+    db_cursor.execute('''
+    SELECT * FROM PICS
+    ''')
+    fetch=db_cursor.fetchall()
+    list=[]
+    for pic in fetch:
+        pic_dict={}
+        pic_dict['POST_ID']=pic['POST_ID']
+        pic_dict['POST_FNAME']=pic['POST_FNAME']
+        pic_dict['URL']=pic['URL']
+        #может можно было просто сделать аппенд пик и всё заработало бы, но я знаю, что роу фэктори это не совсем словарь
+        #так что на всякий случай пусть будет так
+        list.append(pic_dict)
+    return list
+
+def get_links_list_dict():
+    global db_cursor
+    db_cursor.execute('''
+    SELECT DISTINCT
+        SRC.POST_FNAME AS SRC_POST_FNAME,
+        SRC.URL AS SRC_URL,
+        DEST.POST_FNAME AS DEST_POST_FNAME,
+        SRC.DEST_POST_ID AS SRC_DEST_POST_ID
+    FROM LINKS SRC LEFT JOIN LINKS DEST 
+    ON SRC.DEST_POST_ID=DEST.POST_ID 
+    WHERE SRC.POST_ID<>SRC.DEST_POST_ID
+    ''')
+    fetch=db_cursor.fetchall()
+    list=[]
+    for link in fetch:
+        link_dict={}
+        link_dict['SRC_POST_FNAME']=link['SRC_POST_FNAME']
+        link_dict['SRC_URL']=link['SRC_URL']
+        link_dict['DEST_POST_FNAME']=link['DEST_POST_FNAME']
+        link_dict['SRC_DEST_POST_ID']=int(link['SRC_DEST_POST_ID'])
+        #может можно было просто сделать аппенд пик и всё заработало бы, но я знаю, что роу фэктори это не совсем словарь
+        #так что на всякий случай пусть будет так
+        list.append(link_dict)
+    return list
+
+
 def get_tags_list():
     global db_cursor
     db_cursor.execute('''
@@ -257,6 +323,8 @@ def close():
     db_link=None
 
 if __name__=="__main__":
+    #connect()
+    #create_db()
     reset_db("test.db")
     add_post(1,"test","test date","test time","title",5,["Аниме","Дзякиган","Случай из жизни"],"Тестовое содержание")
     add_post(100,"test","test_date","test time2","title2",6,["Аниме","Дзякиган","Автомобили"],"Тестовое содержание3")
@@ -264,10 +332,10 @@ if __name__=="__main__":
     add_pic(1,"TEST","https://example.com")
     add_pic(2,"TEST","https://example.com")
     add_pic(2,"TEST","https://example.com")
-    add_link(1,"TEST","https://example.com")
-    add_link(1,"TEST","https://example.com")
-    add_link(2,"TEST","https://example.com")
-    add_link(2,"TEST","https://example.com")
+    add_link(1,"TEST",2,"https://example.com")
+    add_link(1,"TEST",2,"https://example.com")
+    add_link(2,"TEST",-1,"https://example.com")
+    add_link(2,"TEST",1,"https://example.com")
     print(get_post_contents(1))
     print(get_post_tags(1))
     print(get_posts_list())
@@ -276,4 +344,8 @@ if __name__=="__main__":
     print(get_post_title(1))
     print(get_post_url(1))
     print(get_tags_list())
+    print(get_pics_list_plain())
+    print(get_links_list_plain())
+    print(get_pics_list_dict())
+    print(get_links_list_dict())
     close()

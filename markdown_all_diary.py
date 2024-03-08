@@ -11,6 +11,7 @@ import settings as s
 import init
 import db
 import time
+import replace_urls
 
 def normalize_to_prev_ver(text: str) -> str:
     #после перехода на lxml парсер по неясной причине мд-файлы выглядят немного не так, как должны
@@ -71,13 +72,18 @@ def add_times(list):
         last_time=cur_time
     list.append((cur_time,cur_time-last_time))
 
+
+
 def markdown_all_diary(reset: bool,post_id:int=0) -> None:
     times=[]
+    add_times(times)#0
     print ("Stage 2 of 6: Creating markdown files from HTML...")
     if(reset==True):
         init.reset_vault()
+    add_times(times)#1
 
     db.connect()
+    add_times(times)#2
         
     if(post_id==0):
         file_list=listdir(s.dump_folder)
@@ -105,7 +111,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
 
     print("\nCreating tags list...")
     #OLD
-    add_times(times)#0
+    add_times(times)#3
     renamed_count=0
     tag_count=0
 
@@ -129,7 +135,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
                 tag_file.write("#Теги")
                 tag_file.close()
                 tag_count+=1
-    add_times(times)#1
+    add_times(times)#4
     #DB
     tags_db=db.get_tags_list()
     for tag in tags_db:
@@ -153,7 +159,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
 
     print("\nConverting posts...")
     #OLD
-    add_times(times)#2
+    add_times(times)#5
     file_list_len=len(file_list_out)
     n=0
     for post in file_list_out:
@@ -252,11 +258,15 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         f.close()
 
     #DB
-    add_times(times)#3
+    add_times(times)#6
+    times_loop=[]
     n=0
     fish="<html><title></title><body></body></html>"
     for post_id in file_list_db:
-        #add_times(times)#4
+        add_times(times_loop)
+        times_md=[]
+        add_times(times_md)#0
+        add_times(times_md)#1
         percentage=int(n/file_list_len_db*100)
         print(f"[{percentage}%] {n} of {file_list_len_db} done...",end="\r")
         n+=1
@@ -283,7 +293,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         #имя файла готово, теперь надо его сохранить в словарь
 
         posts_list[post_id]=out_name_file
-        #add_times(times)#5
+        add_times(times_md)#2
         out_page=BeautifulSoup(fish,"lxml")
 
         title_header=BeautifulSoup("<h1></h1>", 'lxml')
@@ -294,11 +304,11 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         (post_date,post_time)=db.get_post_date_time(post_id)
         out_page.find("body").append(post_date+", "+post_time)
         out_page.find("body").append(BeautifulSoup("<br />", 'lxml'))
-        #add_times(times)#6
+        add_times(times_md)#3
 
         out_page.find("body").append(BeautifulSoup(db.get_post_contents(post_id),'lxml'))
         out_page.find("body").append(BeautifulSoup("<br />", 'lxml'))
-        #add_times(times)#7
+        add_times(times_md)#4
         #другие метаданные тоже надо внести
         title_url=title_header.new_tag("a",href=db.get_post_url(post_id))
         
@@ -311,15 +321,15 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
             title_url.string=s.diary_url_pretty+"p"+str(post_id)+".htm"
             out_page.find("body").append(title_url)
             out_page.find("body").append(BeautifulSoup("<br /><br />", 'lxml'))
-        #add_times(times)#8
+        add_times(times_md)#5
         tags_db=db.get_post_tags(post_id)
-        #add_times(times)#9
+        add_times(times_md)#6
         for tag in tags_db:
             if s.diary_url_mode!=s.dum.one_post:
                 out_page.find("body").append(BeautifulSoup("[["+re.sub(r'[\\/*?:"<>|]',"",tag).strip()+"]] <br />", 'lxml'))
             else:
                 out_page.find("body").append(BeautifulSoup("<div>#"+re.sub(r'[\\/*?:"<>|]',"",tag).replace(" ","_").replace("-","_").strip()+"</div><br />", 'lxml'))
-        #add_times(times)#10
+        add_times(times_md)#7
         if s.diary_url_mode!=s.dum.one_post:
             out_page.find("body").append(BeautifulSoup("ID: p"+str(post_id)+"<br />", 'lxml'))
 
@@ -328,13 +338,13 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         #contents=contents.replace("&gt;","\\&gt;")
         #contents=contents.replace("&lt;","\\&lt;")
         #добываем ссылки и картинки
-        #add_times(times)#11
+        add_times(times_md)#8
         bs=BeautifulSoup(contents,"html.parser")
         for pic in bs.find_all("img"):
             if pic.parent.name=="pre" or pic.parent.parent.name=="pre":
                 continue
             db.add_pic(post_id,out_name_file,pic['src'])
-        #add_times(times)#12
+        add_times(times_md)#9
         for link in bs.find_all("a"):
             if not link.has_attr("href"):
                 continue
@@ -355,8 +365,8 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
                     link_is_pic=False
             if link_is_cross_link==False and link_is_pic==False:
                 continue
-            db.add_link(post_id,out_name_file,link['href'])
-        #add_times(times)#13
+            db.add_link(post_id,out_name_file,replace_urls.strip_post_id(link['href']),link['href'])
+        add_times(times_md)#10
         #линуксовые концы строк т.к. обсидиан всё равно их заменит
         f_out=open(out_name,"w",encoding=s.post_encoding,errors="ignore",newline='\n')
         if s.diary_url_mode==s.dum.one_post:
@@ -366,11 +376,11 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
             out_contents=normalize_to_prev_ver(out_contents)
         #макрдаун этого не умеет, поэтому вручную сделаем зачёркивание!
         #out_contents=out_contents.replace("~~","~")
-        #add_times(times)#14
+        add_times(times_md)#11
         out_len=len(out_contents)
         f_out.write(out_contents)
         f_out.close()
-        #add_times(times)#15
+        add_times(times_md)#12
         pass
     
     #OLD
