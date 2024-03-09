@@ -156,12 +156,17 @@ def add_pic(post_id,post_fname,url):
     db_cursor.execute('''
     SELECT * FROM PICS WHERE POST_ID=(?) AND URL=(?)
     ''',(post_id,url))#проверяем только ИД поста, а имя файла не проверяем. рано или поздно это может привести к проблемам!
+    #UPD. И уже привело. Теперь при наличии строки я обновляю имя файла, потому что оно, вообще-то, могло измениться!
     if len(db_cursor.fetchall())==0:
         db_cursor.execute('''
         INSERT INTO PICS (POST_ID,POST_FNAME,URL) VALUES (?,?,?)
         ''',(post_id,post_fname,url))
         res=db_ret.inserted
     else:
+        db_cursor.execute('''
+        UPDATE PICS SET POST_FNAME=(?) 
+        WHERE POST_ID=(?) AND URL=(?)
+        ''',(post_fname,post_id,url))
         res=db_ret.already_exists
     db_link.commit()
 
@@ -171,12 +176,17 @@ def add_link(post_id,post_fname,dest_post_id,url):
     db_cursor.execute('''
     SELECT * FROM LINKS WHERE POST_ID=(?) AND URL=(?)
     ''',(post_id,url))#проверяем только ИД поста, а имя файла не проверяем. рано или поздно это может привести к проблемам!
+    #UPD. И уже привело. Теперь при наличии строки я обновляю имя файла, потому что оно, вообще-то, могло измениться!
     if len(db_cursor.fetchall())==0:
         db_cursor.execute('''
         INSERT INTO LINKS (POST_ID,POST_FNAME,DEST_POST_ID,URL) VALUES (?,?,?,?)
         ''',(post_id,post_fname,dest_post_id,url))
         res=db_ret.inserted
     else:
+        db_cursor.execute('''
+        UPDATE LINKS SET POST_FNAME=(?) 
+        WHERE POST_ID=(?) AND URL=(?)
+        ''',(post_fname,post_id,url))
         res=db_ret.already_exists
     db_link.commit()
 
@@ -215,11 +225,53 @@ def get_post_tags(post_id:int) -> str:
         tags.append(row['TAG'])
     return tags
 
+def get_post_fname(post_id:int) -> str:
+    global db_cursor
+    db_cursor.execute('''SELECT DISTINCT LINKS.POST_FNAME 
+    FROM POSTS LEFT JOIN LINKS 
+    ON POSTS.POST_ID=LINKS.POST_ID 
+    WHERE POSTS.POST_ID=(?)
+    ''',(post_id,))
+    return db_cursor.fetchone()['POST_FNAME']
+
 def get_posts_list():
     global db_cursor
     db_cursor.execute('''
-    SELECT POST_ID FROM POSTS
+    SELECT POST_ID,DATE,TIME 
+    FROM POSTS 
+    ORDER BY DATE,TIME
     ''')
+    fetch=db_cursor.fetchall()
+    list=[]
+    for id in fetch:
+        list.append(int(id['POST_ID']))
+    return list
+
+def get_posts_list_at_date(date):
+    global db_cursor
+    db_cursor.execute('''
+    SELECT POST_ID,DATE,TIME 
+    FROM POSTS
+    WHERE DATE=(?)
+    ORDER BY DATE,TIME
+    ''',(date,))
+    fetch=db_cursor.fetchall()
+    list=[]
+    for id in fetch:
+        list.append(int(id['POST_ID']))
+    return list
+
+def get_posts_list_at_tag(tag):
+    global db_cursor
+    db_cursor.execute('''
+    SELECT POSTS.POST_ID
+    FROM POSTS LEFT JOIN TAGS_LINKED
+    ON POSTS.POST_ID=TAGS_LINKED.POST_ID
+    LEFT JOIN TAGS
+    ON TAGS_LINKED.TAG_ID=TAGS.TAG_ID
+    WHERE TAG=(?)
+    ORDER BY DATE,TIME
+    ''',(tag,))
     fetch=db_cursor.fetchall()
     list=[]
     for id in fetch:
@@ -295,6 +347,7 @@ def get_tags_list():
     global db_cursor
     db_cursor.execute('''
     SELECT TAG FROM TAGS
+    ORDER BY TAG
     ''')
     fetch=db_cursor.fetchall()
     list=[]
@@ -348,4 +401,6 @@ if __name__=="__main__":
     print(get_links_list_plain())
     print(get_pics_list_dict())
     print(get_links_list_dict())
+    print(get_post_fname(1))
+    print(get_posts_list_at_date("test_date")) 
     close()
