@@ -353,12 +353,6 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         print("writing posts: "+str(len(posts_ids)))
 
         for x in range(len(posts_ids)):
-            #post_meta_file_name=s.dump_folder+"p"+posts_ids[x]+".txt"
-            #if Path(post_meta_file_name).is_file() and update==True and saved_pages>2:#вторая страница имеет дубликаты, поэтому её принудительно сохранять, а только потом проверять на повторы
-                #всё, дошли до старых постов
-            #    print("Update complete, found old posts.")
-            #    return
-
             res=db.add_post(int(posts_ids[x]),posts_links[x],posts_dates[x],posts_times_s[x],posts_titles[x],posts_comments_n[x],posts_tags[x],posts_contents[x])
             if update==True and saved_pages>2 and res==db.db_ret.updated:
                 print("Update complete, found old posts.")

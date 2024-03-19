@@ -38,7 +38,7 @@ def replace_urls() -> None:
     print("Reading link lists...",end="")
 
     n=0
-    
+
     #DB
     db.connect()
     if s.download_pics==True:
@@ -55,7 +55,7 @@ def replace_urls() -> None:
         pic_name=os.path.basename(urlparse(pic_url.strip()).path).strip()
         post_name=pic['POST_FNAME']
 
-        post_replace(s.base_folder_db+post_name+".md",pic_url,s.pics_folder+pic_name)
+        post_replace(s.base_folder+post_name+".md",pic_url,s.pics_folder+pic_name)
 
     links=[]
     link={}
@@ -77,7 +77,7 @@ def replace_urls() -> None:
         if link_is_pic and s.download_pics==True:
             link_dest=s.pics_folder+os.path.basename(urlparse(link['SRC_URL'].strip()).path).strip()
             print(f"Replacing {link['SRC_URL']} to {link_dest}")
-            post_replace(s.base_folder_db+link["SRC_POST_FNAME"]+".md",link['SRC_URL'],link_dest.replace(" ","%20"))        
+            post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",link['SRC_URL'],link_dest.replace(" ","%20"))        
         else:
             #обрабатываем перекрёстные ссылки
             if link['SRC_DEST_POST_ID']!=-1 and link['DEST_POST_FNAME'] is not None:
@@ -86,10 +86,10 @@ def replace_urls() -> None:
                     warning=f"Attention! Special character in dest name! {link['DEST_POST_FNAME']}"
                     print(warning)
                     not_found.append(warning)
-                    post_replace(s.base_folder_db+link["SRC_POST_FNAME"]+".md",link['SRC_URL'],(link['DEST_POST_FNAME'].replace(" ","%20")))
-                    #post_replace(s.base_folder_db+link_src["name"]+".md",link_src['url'],("[["+link_dest['name'].replace(" ","%20")+"\|"+link_dest['name'].replace(" ","%20")+"]]"))
+                    post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",link['SRC_URL'],(link['DEST_POST_FNAME'].replace(" ","%20")))
+                    #post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],("[["+link_dest['name'].replace(" ","%20")+"\|"+link_dest['name'].replace(" ","%20")+"]]"))
                 else:
-                    post_replace(s.base_folder_db+link["SRC_POST_FNAME"]+".md",link['SRC_URL'],(link['DEST_POST_FNAME'].replace(" ","%20")))
+                    post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",link['SRC_URL'],(link['DEST_POST_FNAME'].replace(" ","%20")))
 
             if link['SRC_DEST_POST_ID']!=-1 and link['DEST_POST_FNAME'] is None:#если -1, то там обычный урл без номера, конечно он не будет найден
                 warning="WARNING! Destination post not found: "+str(link['SRC_DEST_POST_ID'])+ "; url: "+link['SRC_URL']

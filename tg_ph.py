@@ -165,11 +165,11 @@ def show_children(file1,bs4obj,level):
 
 def html_to_node(html):
     page = BeautifulSoup(html, 'lxml')
-    file_pr=open("out_pr.txt","w",encoding="utf-8")
+    file_pr=open(s.dump_folder+"out_pr.txt","w",encoding="utf-8")
     file_pr.write(page.prettify())
     file_pr.close()
-    file1=open("out.txt","w",encoding="utf-8")
-    file2=open("out_nodes.txt","w",encoding="utf-8")
+    file1=open(s.dump_folder+"out.txt","w",encoding="utf-8")
+    file2=open(s.dump_folder+"out_nodes.txt","w",encoding="utf-8")
     text="["+show_children(file1,page,1)+"]"
     file2.write(text)
     file1.close()
@@ -179,7 +179,7 @@ def html_to_node(html):
     
     
 if __name__=="__main__":
-    t=open("testpage.html","r",encoding="utf-8")
+    t=open(s.dump_folder+"testpage.html","r",encoding="utf-8")
     htext=t.read()
     text=html_to_node(htext)
     init("-")

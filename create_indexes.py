@@ -47,7 +47,7 @@ def generate_post_list_db(post_list: typing.List[int]) -> str:
     (post_date,post_time)=db.get_post_date_time(post_list[0])
     print(f"[DB]At {post_date} we have {len(post_list)} posts...")
     bare_filename=s.day_list_prefix+post_date+".md"
-    filename=s.base_folder_db+s.indexes_folder+s.days_folder+bare_filename
+    filename=s.base_folder+s.indexes_folder+s.days_folder+bare_filename
     list_file=open(filename,"w",encoding=s.post_encoding,newline="\n")
     list_file.write("## "+post_date+"\n")
     list_file.write("| Время | Заголовок |\n| --- | --- |\n")
@@ -122,7 +122,7 @@ def create_indexes() -> None:
     # I. Полный список постов
 
     #DB
-    post_index=open(s.base_folder_db+s.indexes_folder+s.list_file_name,"w",encoding=s.post_encoding,newline="\n")
+    post_index=open(s.base_folder+s.indexes_folder+s.list_file_name,"w",encoding=s.post_encoding,newline="\n")
     post_index.write("| Дата | Заголовок |\n| --- | --- |\n")
     post_list_db=db.get_posts_list()
     for post_id in post_list_db:
@@ -145,7 +145,7 @@ def create_indexes() -> None:
     for year in range(year_start_db,year_end_db+1):
         calendar_text+=generate_year_db(year)
 
-    post_calendar=open(s.base_folder_db+s.indexes_folder+s.calendar_file_name,"w",encoding=s.post_encoding,newline="\n")
+    post_calendar=open(s.base_folder+s.indexes_folder+s.calendar_file_name,"w",encoding=s.post_encoding,newline="\n")
     post_calendar.write(calendar_text)
     post_calendar.close()
 
@@ -157,7 +157,7 @@ def create_indexes() -> None:
     #DB
 
     tags_list=db.get_tags_list()
-    common_tag_list_file=open(s.base_folder_db+s.indexes_folder+s.tags_file_name,"w",encoding=s.post_encoding,newline="\n")
+    common_tag_list_file=open(s.base_folder+s.indexes_folder+s.tags_file_name,"w",encoding=s.post_encoding,newline="\n")
     common_tag_list_file.write("| Тег | N |\n| --- | --- |\n")
 
     for tag in tags_list:
@@ -166,7 +166,7 @@ def create_indexes() -> None:
         tag_safe_name=re.sub(r'[\\/*?:"<>|]',"",tag.strip())
         common_tag_list_file.write(f"| [[{tag_safe_name}\|{tag}]] | {len(post_list)} |\n")
 
-        tag_file_name=s.base_folder_db+s.tags_folder+tag_safe_name+".md"
+        tag_file_name=s.base_folder+s.tags_folder+tag_safe_name+".md"
         tag_file=open(tag_file_name,"w",encoding=s.post_encoding,newline="\n")
         tag_file.write("## Тег: "+tag+"\n")
         tag_file.write("#Теги\n\n")

@@ -78,7 +78,6 @@ wait_time=60 #sec
 
 #Тут надо задать название блокнота для Obsidian
 base_folder="../zhz00_diary_obsidian/"
-base_folder_db="../zhz00_diary_obsidian_db/"
 #base_folder="../zhz_diary_obsidian_nopics/"
 pics_folder="pics/"
 dump_folder="../zhz00_dump/"
@@ -88,6 +87,7 @@ tags_folder="tags/"
 obsidian_settings_folder=".obsidian/"
 obsidian_default_settings_folder="default_obsidian_config/"
 test_folder="tests/data/"
+temp_md_folder="temp_md/"
 
 #Если скрипты распакованы в папку c:\diary\scripts\, то структура будет такой:
 #c:\diary\zhz_diary_obsidian <- тут будут сами посты в формате .md
@@ -142,7 +142,7 @@ def load_tokens():
     global tg_ph_token
     global tg_channel_token
     global tg_channel_name
-    tokens_file=open(tokens_file_name,"r",encoding=links_file_encoding)
+    tokens_file=open(dump_folder+tokens_file_name,"r",encoding=links_file_encoding)
     tg_ph_token=tokens_file.readline().strip()
     tg_channel_token=tokens_file.readline().strip()
     tg_channel_name=tokens_file.readline().strip()
@@ -156,7 +156,7 @@ def change_username(uname: str,session: str) -> None:
     global link_marks
     global cross_link_checking
     global base_folder
-    global base_folder_db
+    global base_folder
     global dump_folder
     global links_style
     diary_url='https://diary.ru/~'+uname+'?oam&rfrom='
@@ -164,15 +164,15 @@ def change_username(uname: str,session: str) -> None:
     cross_link_checking=[uname+".diary.ru/","/~"+uname+"/"]
     saved_cookies['_session']=session
     if diary_url_mode==dum.one_post:
-        base_folder="../"+uname+"_diary_obsidian_temp/"
-        dump_folder="../"+uname+"_dump_temp/"
+        base_folder="../"+uname+"_diary_obsidian/"
+        dump_folder="../"+uname+"_dump/"
     else:
         dump_folder="../"+uname+"_dump/"
         if download_pics:
             base_folder="../"+uname+"_diary_obsidian/"
-            base_folder_db="../"+uname+"_diary_obsidian_db/"
         else:
             base_folder="../"+uname+"_diary_obsidian_nopics/"
+
 
 #    if len(saved_cookies['_session'])<2:
 #        links_style=0

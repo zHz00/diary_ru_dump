@@ -24,7 +24,7 @@ def download_pics(post_id=-1) -> None:
         pics_list_db=db.get_pics_list_plain()
     print(f"[DB]Ordinary pictures:{len(pics_list_db)}")
 
-    links_list_db=db.get_links_list_plain()
+    links_list_db=db.get_links_list_plain(post_id)
 
     pics_from_urls=0
     for link in links_list_db:
@@ -81,7 +81,7 @@ def download_pics(post_id=-1) -> None:
             pic_names.add(pic_name)
 
 
-        pic_full_name=s.base_folder_db+s.pics_folder+pic_name
+        pic_full_name=s.base_folder+s.pics_folder+pic_name
         if(Path(pic_full_name).is_file()):
             print(percentage_header+pic_url+" already downloaded. Skipping...")
             pic_skipped+=1
@@ -92,7 +92,7 @@ def download_pics(post_id=-1) -> None:
             try:
                 pic=requests.get(pic_url,verify=False,headers=s.user_agent)
             except:
-                open(s.base_folder_db+s.pics_folder+pic_name,"wb").close()
+                open(s.base_folder+s.pics_folder+pic_name,"wb").close()
                 warning="[DB]Error during downloading ["+pic_url+"]! Skipping..."
                 warnings.append(warning)
                 print(percentage_header+warning)
@@ -103,14 +103,14 @@ def download_pics(post_id=-1) -> None:
                 src_pic=open(s.test_folder+pic_name,"rb")
                 pic.content=src_pic.read()
             except:
-                open(s.base_folder_db+s.pics_folder+pic_name,"wb").close()
+                open(s.base_folder+s.pics_folder+pic_name,"wb").close()
                 warning="[DB]Error during downloading ["+pic_url+"]! Skipping..."
                 warnings.append(warning)
                 print(percentage_header+warning)
                 pic_errors+=1
                 continue                
 
-        out_pic=open(s.base_folder_db+s.pics_folder+pic_name,"wb")
+        out_pic=open(s.base_folder+s.pics_folder+pic_name,"wb")
         out_pic.write(pic.content)
         out_pic.close()
         print(percentage_header+f"[DB]Done saving. Size={len(pic.content)}. Waiting for {s.wait_time} sec...")

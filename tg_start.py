@@ -52,11 +52,6 @@ SEPARATOR=0
 CAPTION=1
 
 def divide_post(post_id,md_post_name):
-    #OLD 
-    #meta=open(s.dump_folder+"p"+str(post_id)+".txt","r",encoding="utf-8")
-    #meta_text=meta.readlines()
-    #meta.close()
-
     #DB
     header=db.get_post_title(post_id)
     
@@ -70,7 +65,7 @@ def divide_post(post_id,md_post_name):
     cur_len=0#накапливаем длину абзацев для поста
     posts=[]
     
-    test_out=open("posts.txt","w",encoding="utf-8")
+    test_out=open(s.dump_folder+"posts.txt","w",encoding="utf-8")
     
     unbreakable=False
     prev_line=""
@@ -189,10 +184,6 @@ def post_to_tgch(post_id,img_list,md_post_name):
     
 def post_short_to_tgch(post_id,tgph_url):
 
-    #OLD
-    #meta=open(s.dump_folder+"p"+str(post_id)+".txt","r",encoding="utf-8")
-    #meta_text=meta.readlines()
-    #meta.close()
     header=db.get_post_title(post_id)
     (date_db,time_db)=db.get_post_date_time(post_id)
     out_text="*"
@@ -201,15 +192,13 @@ def post_short_to_tgch(post_id,tgph_url):
     out_text+=date_db.strip()+", "+time_db.strip()+"\n"
     out_text+="[(читать на telegra.ph)]("+tgph_url+")\n\n"
     out_text+=s.diary_url_pretty+"p"+str(post_id)+".htm\n\n"
-    #OLD
-    #for x in range(5,len(meta_text)-1):
-    #    out_text+="#"+meta_text[x].replace(" ","\\_")#пробелов быть не должно
+
     tags=db.get_post_tags(post_id)
     for tag in tags:
         out_text+="#"+tag.replace(" ","\\_")#пробелов быть не должно
 
     
-    tgch_short_file=open("short.txt","w",encoding="utf-8")
+    tgch_short_file=open(s.dump_folder+"short.txt","w",encoding="utf-8")
     tgch_short_file.write(out_text)
     tgch_short_file.close()
     

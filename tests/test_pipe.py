@@ -39,7 +39,7 @@ def test_new_design_file() -> None:
     s.stop=20
     s.wait_time=5
     init.create_folders()
-    init.reset_vault()
+    init.reset_vault(s.base_folder)
     init.delete_obsidian_settings()
     init.delete_pics()
     init.delete_indexes()

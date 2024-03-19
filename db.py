@@ -300,11 +300,17 @@ def get_pics_list_plain(post_id=-1):
         list.append(pic['URL'])
     return list
 
-def get_links_list_plain():
+def get_links_list_plain(post_id=-1):
     global db_cursor
-    db_cursor.execute('''
-    SELECT URL FROM LINKS
-    ''')
+    if post_id==-1:
+        db_cursor.execute('''
+        SELECT URL FROM LINKS
+        ''')
+    else:
+        db_cursor.execute('''
+        SELECT URL FROM LINKS
+        WHERE POST_ID=(?)
+        ''',(post_id,))
     fetch=db_cursor.fetchall()
     list=[]
     for link in fetch:
@@ -364,7 +370,9 @@ def get_tags_list():
     list=[]
     for id in fetch:
         list.append(id['TAG'])
-    return list    
+    return list 
+    
+       
 
 
 
