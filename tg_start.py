@@ -2,6 +2,7 @@ import requests
 from download import download
 from download_pics import download_pics
 from markdown_all_diary import markdown_all_diary
+from markdown_all_diary import get_post_as_html
 from replace_urls import replace_urls
 from create_indexes import create_indexes
 import settings as s
@@ -9,10 +10,17 @@ import init
 import tg_ph
 import tg_channel
 import time
+import db
 
 def post_to_tgph(post_id,img_list):
-    html=open(s.dump_folder+"p"+str(post_id)+".htm","r",encoding="utf-8")
-    html_text=html.read()
+
+    #OLD
+    #html=open(s.dump_folder+"p"+str(post_id)+".htm","r",encoding="utf-8")
+    #html_text=html.read()
+
+    #DB
+    html_text=get_post_as_html(post_id)
+
     uploaded_list=[]
     for img in img_list:
         #pass
@@ -31,14 +39,12 @@ def post_to_tgph(post_id,img_list):
     node_out=open(s.dump_folder+"p"+str(post_id)+"node.txt","w",encoding="utf-8")
     node_out.write(node_text)
     node_out.close()
-    meta=open(s.dump_folder+"p"+str(post_id)+".txt","r",encoding="utf-8")
-    meta_text=meta.readlines()
-    meta.close()
-    print("Header:"+meta_text[4])
+    header=db.get_post_title(post_id)
+    print("Header:"+header)
     node_out=open(s.dump_folder+"p"+str(post_id)+"node.txt","r",encoding="utf-8")
     node_text=node_out.read()
     tg_ph.init(s.tg_ph_token)
-    return tg_ph.create_page(meta_text[4],node_text)
+    return tg_ph.create_page(header,node_text)
     #return None
 
     
@@ -46,16 +52,20 @@ SEPARATOR=0
 CAPTION=1
 
 def divide_post(post_id,md_post_name):
-    meta=open(s.dump_folder+"p"+str(post_id)+".txt","r",encoding="utf-8")
-    meta_text=meta.readlines()
-    meta.close()
+    #OLD 
+    #meta=open(s.dump_folder+"p"+str(post_id)+".txt","r",encoding="utf-8")
+    #meta_text=meta.readlines()
+    #meta.close()
+
+    #DB
+    header=db.get_post_title(post_id)
     
     md=open(md_post_name,"r",encoding="utf-8")
     md_text=md.readlines()
     md.close()
     
     md_text.insert(0,"\n\n")
-    md_text.insert(0,"*"+meta_text[4].strip()+"*")
+    md_text.insert(0,"*"+header.strip()+"*")
     
     cur_len=0#накапливаем длину абзацев для поста
     posts=[]
@@ -178,17 +188,26 @@ def post_to_tgch(post_id,img_list,md_post_name):
                 text+=divided_post[x]
     
 def post_short_to_tgch(post_id,tgph_url):
-    meta=open(s.dump_folder+"p"+str(post_id)+".txt","r",encoding="utf-8")
-    meta_text=meta.readlines()
-    meta.close()
+
+    #OLD
+    #meta=open(s.dump_folder+"p"+str(post_id)+".txt","r",encoding="utf-8")
+    #meta_text=meta.readlines()
+    #meta.close()
+    header=db.get_post_title(post_id)
+    (date_db,time_db)=db.get_post_date_time(post_id)
     out_text="*"
-    out_text+=meta_text[4].strip()#header
+    out_text+=header.strip()#header
     out_text+="*\n\n"
-    out_text+=meta_text[2].strip()+", "+meta_text[3].strip()+"\n"
+    out_text+=date_db.strip()+", "+time_db.strip()+"\n"
     out_text+="[(читать на telegra.ph)]("+tgph_url+")\n\n"
-    out_text+=s.diary_url_pretty+"p"+str(meta_text[0].strip())+".htm\n\n"
-    for x in range(5,len(meta_text)-1):
-        out_text+="#"+meta_text[x].replace(" ","\\_")#пробелов быть не должно
+    out_text+=s.diary_url_pretty+"p"+str(post_id)+".htm\n\n"
+    #OLD
+    #for x in range(5,len(meta_text)-1):
+    #    out_text+="#"+meta_text[x].replace(" ","\\_")#пробелов быть не должно
+    tags=db.get_post_tags(post_id)
+    for tag in tags:
+        out_text+="#"+tag.replace(" ","\\_")#пробелов быть не должно
+
     
     tgch_short_file=open("short.txt","w",encoding="utf-8")
     tgch_short_file.write(out_text)
@@ -222,13 +241,17 @@ def main():
     #src_post=open(s.dump_folder+post,"r",encoding="utf-8")
     #src_post_contents=src_post.read()
     post_id=download(False,False,post_id)#автоматически найти последний пост
+    if post_id==0:
+        return
     #init.create_folders()
     md_post_name,md_post_len=markdown_all_diary(True,post_id)
     print(md_post_name)
     print(md_post_len)
-    img_list=download_pics()
+    img_list=download_pics(post_id)
     print("IMAGES:")
     print(img_list)
+
+    db.connect()
 
     if md_post_len>s.tg_max_len or len(img_list)>s.tg_max_pics:
         print("Posting to telegraph...")

@@ -149,6 +149,7 @@ def find_last_post() -> int:
             print("Last post:"+str(post_id))
             return post_id
     print("no last post found")
+    return 0
 
 
 def test_epigraph(epigraph: typing.Dict[str,bool],test_name: str) -> bool:
@@ -161,10 +162,12 @@ def test_epigraph(epigraph: typing.Dict[str,bool],test_name: str) -> bool:
 
 def download(update: bool,auto_find: bool,post_id:int=0) -> None:
     db.connect()
-    if s.diary_url_mode==s.dum.full:
+    if s.diary_url_mode==s.dum.full and update==False:
         db.reset_posts()
     if(post_id==0 and s.diary_url_mode==s.dum.one_post):
         post_id=find_last_post()
+        if post_id==0:
+            return 0
     if(auto_find):
         last_page=find_last_page()
     else:
@@ -343,9 +346,6 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
         #а теперь надо всё собрать обратно
 
-        fish="<html><title></title><body></body></html>"
-        out_page=BeautifulSoup(fish,"lxml")
-        #это не соответствует в3ц, ну и ладно
         
         if s.diary_url_mode==s.dum.one_post:
             posts_ids=[posts_ids[0]]
@@ -353,68 +353,16 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         print("writing posts: "+str(len(posts_ids)))
 
         for x in range(len(posts_ids)):
-            #метаданные собираем в отдельный файл
-
-            post_meta_file_name=s.dump_folder+"p"+posts_ids[x]+".txt"
-            if Path(post_meta_file_name).is_file() and update==True and saved_pages>2:#вторая страница имеет дубликаты, поэтому её принудительно сохранять, а только потом проверять на повторы
+            #post_meta_file_name=s.dump_folder+"p"+posts_ids[x]+".txt"
+            #if Path(post_meta_file_name).is_file() and update==True and saved_pages>2:#вторая страница имеет дубликаты, поэтому её принудительно сохранять, а только потом проверять на повторы
                 #всё, дошли до старых постов
+            #    print("Update complete, found old posts.")
+            #    return
+
+            res=db.add_post(int(posts_ids[x]),posts_links[x],posts_dates[x],posts_times_s[x],posts_titles[x],posts_comments_n[x],posts_tags[x],posts_contents[x])
+            if update==True and saved_pages>2 and res==db.db_ret.updated:
                 print("Update complete, found old posts.")
-                return #!
-            out_meta=open(post_meta_file_name,"w",encoding=s.post_encoding)
-            out_meta.write(f"{posts_ids[x]}\n")
-            out_meta.write(f"{posts_links[x]}\n")
-            out_meta.write(f"{posts_dates[x]}\n")
-            out_meta.write(f"{posts_times_s[x]}\n")
-            out_meta.write(f"{posts_titles[x]}\n")
-            out_meta.write(f"{posts_comments_n[x]}\n")
-            for tag in posts_tags[x]:
-                out_meta.write(f"{tag}\n")
-            out_meta.write("\n")
-            out_meta.close()
-
-            out_page=BeautifulSoup(fish,"lxml")
-
-            title_header=BeautifulSoup("<h1></h1>", 'lxml')
-            title_header.find("h1").string=posts_titles[x]
-            if s.diary_url_mode!=s.dum.one_post:
-                out_page.find("body").append(title_header)
-                out_page.find("body").append(BeautifulSoup("<br />", 'lxml'))
-
-            out_page.find("body").append(posts_dates[x]+", "+posts_times_s[x])
-            out_page.find("body").append(BeautifulSoup("<br />", 'lxml'))
-
-            out_page.find("body").append(BeautifulSoup(posts_contents[x],'lxml'))
-            out_page.find("body").append(BeautifulSoup("<br />", 'lxml'))
-
-            #другие метаданные тоже надо внести
-
-            title_url=title_header.new_tag("a",href=posts_links[x])
-            
-            if s.diary_url_mode!=s.dum.one_post:
-                title_url.string=posts_links[x]
-                out_page.find("body").append(title_url)
-                out_page.find("body").append(BeautifulSoup("<br />", 'lxml'))
-                out_page.find("body").append(BeautifulSoup("<br />Теги:<br />", 'lxml'))
-            else:
-                title_url.string=s.diary_url_pretty+"p"+str(post_id)+".htm"
-                out_page.find("body").append(title_url)
-                out_page.find("body").append(BeautifulSoup("<br /><br />", 'lxml'))
-
-
-            for tag in posts_tags[x]:
-                if s.diary_url_mode!=s.dum.one_post:
-                    out_page.find("body").append(BeautifulSoup("[["+re.sub(r'[\\/*?:"<>|]',"",tag).strip()+"]] <br />", 'lxml'))
-                else:
-                    out_page.find("body").append(BeautifulSoup("<div>#"+re.sub(r'[\\/*?:"<>|]',"",tag).replace(" ","_").replace("-","_").strip()+"</div><br />", 'lxml'))
-
-            if s.diary_url_mode!=s.dum.one_post:
-                out_page.find("body").append(BeautifulSoup("ID: p"+posts_ids[x]+"<br />", 'lxml'))
-
-            out_post=open(s.dump_folder+"p"+posts_ids[x]+".htm","w",encoding=s.post_encoding)
-            out_post.write(str(out_page))
-            out_post.close()
-
-            db.add_post(int(posts_ids[x]),posts_links[x],posts_dates[x],posts_times_s[x],posts_titles[x],posts_comments_n[x],posts_tags[x],posts_contents[x])
+                return                
 
         saved_pages+=1
         print(f"Done saving. Waiting for {s.wait_time} sec...")

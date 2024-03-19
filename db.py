@@ -197,11 +197,16 @@ def get_post_contents(post_id:int) -> str:
     ''',(post_id,))
     return db_cursor.fetchone()['CONTENTS']
 
-def get_post_title(post_id:int) -> str:
+def get_post_title(post_id:int) -> str:#конкрнетно для данной функции сделано, чтобы она корректно работала при отсутствии поста
+    #такое надо сделать для всех но пока нету. у этой функции сделано, т.к. она используется для проверки существования поста
     global db_cursor
     db_cursor.execute('''SELECT TITLE FROM POSTS WHERE POST_ID=(?)
     ''',(post_id,))
-    return db_cursor.fetchone()['TITLE']
+    fetch=db_cursor.fetchone()
+    if fetch==None:
+        return None
+    else:
+        return fetch['TITLE']
 
 def get_post_url(post_id:int) -> str:
     global db_cursor
@@ -278,11 +283,17 @@ def get_posts_list_at_tag(tag):
         list.append(int(id['POST_ID']))
     return list
 
-def get_pics_list_plain():
+def get_pics_list_plain(post_id=-1):
     global db_cursor
-    db_cursor.execute('''
-    SELECT URL FROM PICS
-    ''')
+    if post_id==-1:
+        db_cursor.execute('''
+        SELECT URL FROM PICS
+        ''')
+    else:
+        db_cursor.execute('''
+        SELECT URL FROM PICS
+        WHERE POST_ID=(?)
+        ''',(post_id,))
     fetch=db_cursor.fetchall()
     list=[]
     for pic in fetch:
