@@ -34,7 +34,7 @@ def strip_post_id(url: str) -> str:
 
 def replace_urls() -> None:
 
-    print("Stage 4 of 6: Replacing cross links...")
+    print("Stage 5 of 7: Replacing cross links...")
     print("Reading link lists...",end="")
 
     n=0

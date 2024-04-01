@@ -2,6 +2,7 @@
 
 from cgi import test
 import requests
+import certifi
 from bs4 import BeautifulSoup
 import time
 import re
@@ -12,6 +13,7 @@ import settings as s
 import init
 import typing
 import db
+import tqdm
 
 def convert_to_old_style(url: str) -> str:
     #новые ссылки типа имя.дайари.ру/ должны быть превращены в дайари.ру/~имя, чтобы совпадало со старыми дампами
@@ -111,6 +113,9 @@ def convert_date(date: str) -> str:
     date = date.split()
     return date[3] + '-' + month_convertor[date[2]] + '-' + date[1]
 
+def convert_date_ru_to_iso(date:str)->str:
+    return date[6:]+'-'+date[3:5]+'-'+date[0:2]
+
 def get_cookies() -> None:
     cookies=RequestsCookieJar()
     for c_name,c_value in s.saved_cookies.items():
@@ -122,7 +127,7 @@ def find_last_page() -> int:
     print("Finding last page...")
     page_url=s.diary_url
     print("Downloading "+page_url+"...")
-    page = requests.get(page_url,cookies=get_cookies(),verify=False)
+    page = requests.get(page_url,cookies=get_cookies())
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
     for div in post_divs:
@@ -140,7 +145,7 @@ def find_last_post() -> int:
     print("Finding last post...")
     page_url=s.diary_url
     print("Downloading "+page_url+"...")
-    page = requests.get(page_url,cookies=get_cookies(),verify=False)
+    page = requests.get(page_url,cookies=get_cookies())
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
     for div in post_divs:
@@ -179,7 +184,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         s.start=20
         s.stop=last_page+20
 
-    print("Stage 1 of 6: Downloading posts...")
+    print("Stage 1 of 7: Downloading posts...")
 
     step=20
 
@@ -209,7 +214,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
             page_url+=".html"
         print("Downloading "+page_url+"...")
         if s.diary_url_mode!=s.dum.from_file:
-            page = requests.get(page_url,cookies=get_cookies(),verify=False)
+            page = requests.get(page_url,cookies=get_cookies())
 
             if s.download_html==True:
                 htmlfile_name=s.dump_folder+f"sheet{offset}.html"
@@ -247,7 +252,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                 if len(div["class"])>1:
                     class_name_2nd=div["class"][1]
                 else:
-                    clase_name_2nd=""
+                    class_name_2nd=""
                 #отладочный вывод, когда дайри-программист в очередной раз перепиливает разметку
                 #id_name=div["id"] if div.has_attr("id") else "[none]"
                 #print("Class:"+class_name+", id="+id_name)
@@ -368,6 +373,119 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
     print(f"Done. Downloadaed {len(posts_ids)} posts.")
     if s.diary_url_mode==s.dum.one_post:#скачал один пост -- сообщи ид выше
         return post_id
+
+def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
+    comments_on_page=30
+    comments_existing_ids=db.get_post_comments_list(post_id)
+    urls=[]
+    pages=n//comments_on_page+1
+    comments_n_actual=0
+    for page in range(pages):
+        url=f"https://{s.uname}.diary.ru/p{post_id}.htm?from={comments_on_page*page}"
+        urls.append(url)
+
+        print(f"[{percentage}%, {left} posts left] Comments: {n}. Downloading "+url+"...")
+        page = requests.get(url,cookies=get_cookies())
+        page = BeautifulSoup(change_pre(page.text), 'lxml')
+            
+        #c_ означает comment_. это сокращение
+        c_contents=[]
+        c_id=[]
+        c_date=[]
+        c_time=[]
+        c_author=[]
+
+        first_on_page=True
+
+        #разбор данных на метаданные
+
+        epigraph={}
+        c_class_name_id="discussion"
+        #нам надо пропустить все дивы эпиграфа
+        posts_divs=page.find_all("div")
+        for div in posts_divs:
+            if div.has_attr("class") and len(div["class"])>0:
+                class_name=div["class"][0]
+                if len(div["class"])>1:
+                    class_name_2nd=div["class"][1]
+                else:
+                    class_name_2nd=""
+                #отладочный вывод, когда дайри-программист в очередной раз перепиливает разметку
+                #id_name=div["id"] if div.has_attr("id") else "[none]"
+                #print("Class:"+class_name+", id="+id_name)
+
+                if class_name == c_class_name_id or class_name_2nd==c_class_name_id:
+                    if div.has_attr("data-id"):
+                        c_id.append(div["data-id"])
+                    else:
+                        print("Warning! No ID!")
+                if class_name == "authorName" and div.has_attr("style")==False:#авторство есть и у поста, с которого начинается ветка, но там есть дополнительный тег
+                    contents=div.a.strong.contents
+                    if(len(contents)==0):
+                        c_author.append("UNKNOWN")#такое реально есть в https://zhz00.diary.ru/p175991102.htm . Комментарий удалён администрацией и почему-то оставлена записочка об этом!
+                    else:
+                        c_author.append(div.a.strong.contents[0])
+                if class_name == "post-header":
+                    dt=div.span.contents[0]
+                    if len(dt)>10:#у стартового поста только время, а это всего 5 символов, так что если больше 10, то это комментарий
+                        c_date.append(convert_date_ru_to_iso(dt[:10]))
+                        c_time.append(dt[13:])
+                if class_name== "post-inner" and not (div.parent.has_attr("class") and div.parent["class"][0]=="post-inner"):#if(div.parent.find("p")!=None):#если тегов у коммента нет, то это не работает
+                    if first_on_page==True:
+                        first_on_page=False
+                    else:
+                        c_contents.append(remove_newlines_ex(div))
+        len1=len(c_id)
+        len2=len(c_author)
+        len3=len(c_date)
+        len4=len(c_time)
+        len5=len(c_contents)
+        cl1=len1==len2
+        cl2=len2==len3
+        cl3=len3==len4
+        cl4=len4==len5
+        c_common=cl1 and cl2 and cl3 and cl4
+        if c_common==False:
+            print("Warning! Different length of fields while downloading comments")
+        else:
+            #можно добавлять
+            for x in range(len(c_id)):
+                #добавить конвертацию даты
+                db.add_comment(int(c_id[x]),post_id,c_date[x],c_time[x],c_author[x],c_contents[x])
+                comments_n_actual+=1
+                if int(c_id[x]) in comments_existing_ids:
+                    comments_existing_ids.remove(int(c_id[x]))#если скачанный коммент уже есть в базе, удалим из списка. зачем? см. далее
+        print(f"Waiting for {s.wait_time} seconds...")
+        time.sleep(s.wait_time)
+
+    for comment_id in comments_existing_ids:
+        #те комменты которые остались -- это те что есть в базе, но мы их не нашли. почему? потому что их удалили. надо их пометить в базе
+        print(f"Deleting comment #{comment_id}...")
+        db.mark_deleted_comment(comment_id)
+        comments_n_actual-=1
+    if(n>comments_on_page):
+        print(urls)
+    db.update_comments_n(post_id,comments_n_actual)
+
+def download_comments():
+    print("Stage 2 of 7: Downloading (updating) comments")
+    db.connect()
+    print("Generating post list...")
+    posts=db.get_posts_list()
+    posts_to_download=[]
+    posts_comments_n=[]
+    for post_id in tqdm.tqdm(posts):
+        print(f"\rChecking post #{post_id}...",end="\r")
+        n=db.get_post_comments_n(post_id)
+        if n!=db.get_post_comments_downloaded(post_id):
+            posts_to_download.append(post_id)
+            posts_comments_n.append(n)
+    print(f"{len(posts_to_download)} posts to update...")
+    posts_n=len(posts_to_download)
+    for x in range(posts_n):
+        percentage=x*100//posts_n
+        left=posts_n-x
+        download_comments_from_post(posts_to_download[x],posts_comments_n[x],percentage,left)
 
 
 if __name__=="__main__":

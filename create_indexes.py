@@ -114,7 +114,7 @@ def generate_year_db(year: int) -> str:
 
 
 def create_indexes() -> None:
-    print("Stage 5 of 6: Creating indexes...")
+    print("Stage 6 of 7: Creating indexes...")
     print("Creating full list...",end="")
     file_list=os.listdir(s.base_folder)
 

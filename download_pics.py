@@ -11,7 +11,7 @@ import init
 import db
 
 def download_pics(post_id=-1) -> None:
-    print("Stage 3 of 6: Downloading images...")
+    print("Stage 4 of 7: Downloading images...")
     if s.download_pics==False:
         print("Skip.")
         return
@@ -90,7 +90,7 @@ def download_pics(post_id=-1) -> None:
 
         if s.diary_url_mode!=s.dum.from_file:
             try:
-                pic=requests.get(pic_url,verify=False,headers=s.user_agent)
+                pic=requests.get(pic_url,headers=s.user_agent)
             except:
                 open(s.base_folder+s.pics_folder+pic_name,"wb").close()
                 warning="[DB]Error during downloading ["+pic_url+"]! Skipping..."

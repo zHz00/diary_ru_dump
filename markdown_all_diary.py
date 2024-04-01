@@ -99,7 +99,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
     times_md=[]
     times=[]
     add_times(times)#0
-    print ("Stage 2 of 6: Creating markdown files from HTML...")
+    print ("Stage 3 of 7: Creating markdown files from HTML...")
     if(reset==True):
         if s.diary_url_mode==s.dum.one_post:
             init.reset_vault(s.dump_folder+s.temp_md_folder)
