@@ -124,6 +124,10 @@ def get_cookies() -> None:
     return cookies
 
 def find_last_page() -> int:
+    if hasattr(find_last_page,"last_num_cached"):
+        print(f"Last page already found: {find_last_page.last_num_cached}")
+        return find_last_page.last_num_cached
+
     print("Finding last page...")
     page_url=s.diary_url
     print("Downloading "+page_url+"...")
@@ -139,6 +143,7 @@ def find_last_page() -> int:
                     last_num=int(href["href"][last_num_idx+1:])
                     break
     print(f"Last page: {last_num}")
+    find_last_page.last_num_cached=last_num
     return last_num
     
 def find_last_post() -> int:
@@ -184,7 +189,10 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         s.start=20
         s.stop=last_page+20
 
-    print("Stage 1 of 7: Downloading posts...")
+    if s.diary_url_mode!=s.dum.newest_comments:
+        print("Stage 1 of 7: Downloading posts...")
+    else:
+        print("Updating comments counters...")
 
     step=20
 
@@ -192,20 +200,31 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         step=20
     if s.diary_url_mode==s.dum.full and s.start>s.stop:
         step=-20
+
+    if s.diary_url_mode==s.dum.newest_comments and s.start<=s.stop:
+        step=20
+    if s.diary_url_mode==s.dum.newest_comments and s.start>s.stop:
+        step=-20
+
     if s.diary_url_mode==s.dum.by_tag and s.start<=s.stop:
         step=1
     if s.diary_url_mode==s.dum.by_tag and s.start>s.stop:
         step=-1
+
     if s.diary_url_mode==s.dum.one_post:
         s.start=0
         s.stop=1
         step=1
 
     saved_pages=0
+    comments_n_changed=True
         
     for offset in range(s.start, s.stop, step):
         if s.diary_url_mode!=s.dum.one_post:
-            page_url=s.diary_url+str(offset)
+            if s.diary_url_mode==s.dum.newest_comments:
+                page_url=s.diary_url_comments+str(offset)
+            else:
+                page_url=s.diary_url+str(offset)
         else:
             qmark_index=s.diary_url.find("?")
             page_url=s.diary_url[:qmark_index]+"/p"+str(post_id)+".htm"+s.diary_url[qmark_index:]
@@ -359,9 +378,19 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
         for x in range(len(posts_ids)):
             res=db.add_post(int(posts_ids[x]),posts_links[x],posts_dates[x],posts_times_s[x],posts_titles[x],posts_comments_n[x],posts_tags[x],posts_contents[x])
-            if update==True and saved_pages>2 and res==db.db_ret.updated:
+            if res==db.db_ret.updated_comments_n_identical:
+                comments_n_changed=False
+            if \
+                update==True and \
+                saved_pages>2 and \
+                (res==db.db_ret.updated_comments_n_changed or res==db.db_ret.updated_comments_n_identical) and \
+                s.diary_url_mode==s.dum.full:
+
                 print("Update complete, found old posts.")
-                return                
+                return
+            if update==True and comments_n_changed==False and s.diary_url_mode==s.dum.newest_comments:
+                print("Update comments complete, found posts with equal comments counter.")
+                return            
 
         saved_pages+=1
         print(f"Done saving. Waiting for {s.wait_time} sec...")
@@ -467,9 +496,13 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
         print(urls)
     db.update_comments_n(post_id,comments_n_actual)
 
-def download_comments():
+def download_comments(update:bool):
     print("Stage 2 of 7: Downloading (updating) comments")
     db.connect()
+    if update==True:
+        s.diary_url_mode=s.dum.newest_comments
+        download(update=True,auto_find=True)
+    
     print("Generating post list...")
     posts=db.get_posts_list()
     posts_to_download=[]
@@ -486,7 +519,6 @@ def download_comments():
         percentage=x*100//posts_n
         left=posts_n-x
         download_comments_from_post(posts_to_download[x],posts_comments_n[x],percentage,left)
-
 
 if __name__=="__main__":
     #convert_to_old_style("https://zhz00.diary.ru/p221381736_podschyot-prosmotrov-v-telegrame.htm")

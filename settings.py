@@ -7,6 +7,7 @@ session=""
 
 #Замените в следующей настройке мой ник на необходимый
 diary_url='https://diary.ru/~zHz00?oam&rfrom='
+diary_url_comments='https://diary.ru/~zHz00?sort=last_comment&rfrom='
 diary_url_pretty='https://zhz00.diary.ru/'
 
 #diary_url='https://zhz00.diary.ru/?tag=33243&n=t&page='
@@ -16,6 +17,7 @@ class dum(enum.Enum):
     by_tag=1
     from_file=2
     one_post=3
+    newest_comments=4
 
 # 0 -- режим постов -- 20, 40, 60 и т.п.
 # 1 -- режим страниц, если скачиваем по тегу, 1, 2, 3 и т.п.
@@ -153,6 +155,7 @@ def load_tokens():
 
 def change_username(uname: str,session: str) -> None:
     global diary_url
+    global diary_url_comments
     global link_marks
     global cross_link_checking
     global base_folder
@@ -160,6 +163,7 @@ def change_username(uname: str,session: str) -> None:
     global dump_folder
     global links_style
     diary_url='https://diary.ru/~'+uname+'?oam&rfrom='
+    diary_url_comments='https://diary.ru/~'+uname+'?sort=last_comment&rfrom='
     link_marks=[uname+"/p",uname+".diary.ru/p"]
     cross_link_checking=[uname+".diary.ru/","/~"+uname+"/"]
     saved_cookies['_session']=session

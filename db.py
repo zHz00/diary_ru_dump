@@ -13,6 +13,8 @@ class db_ret(enum.Enum):
     already_exists=3
     created=4
     connected=5
+    updated_comments_n_changed=6
+    updated_comments_n_identical=7
 
 def connect(create=True):
     global db_link
@@ -112,11 +114,16 @@ def add_post(post_id,url,date,time,title,comments_n,tags,contents):
     found=db_cursor.fetchall()
     if(len(found)>0):
         #пост найден, надо его обновить
+        comments_n_old=get_post_comments_downloaded(post_id)
         db_cursor.execute('''UPDATE POSTS SET
         (POST_ID,URL,DATE,TIME,TITLE,COMMENTS_N,CONTENTS)=
         (?,?,?,?,?,?,?)
         WHERE POST_ID=(?)''',(post_id,url,date,time,title,comments_n,contents,post_id))
-        res=db_ret.updated
+        print(f"id:{post_id}, old:{comments_n_old}, new:{comments_n}")
+        if comments_n_old==int(comments_n):
+            res=db_ret.updated_comments_n_identical
+        else:
+            res=db_ret.updated_comments_n_changed
     else:
         db_cursor.execute('''INSERT INTO POSTS 
         (POST_ID,URL,DATE,TIME,TITLE,COMMENTS_N,CONTENTS)

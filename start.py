@@ -32,9 +32,9 @@ Possible scenarios:
 Stage:                     [  1  ][  2  ][  3  ][  4  ][  5  ][  6  ][  7  ]
 
 A. Total (default)         [  +  ][  -  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
-B. Update + markup         [ +/- ][  -  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
-C. Update (no markup)      [ +/- ][  -  ][  -  ][  -  ][  -  ][  -  ][  -  ]
-D. Download (no markup)    [  +  ][  -  ][  -  ][  -  ][  -  ][  -  ][  -  ]
+B. Update + markup         [ +/- ][ +/- ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
+C. Update (no markup)      [ +/- ][ +/- ][  -  ][  -  ][  -  ][  -  ][  -  ]
+D. Download (no markup)    [  +  ][  +  ][  -  ][  -  ][  -  ][  -  ][  -  ]
 E. Markup                  [  -  ][  -  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
 F. Download comments       [  -  ][  +  ][  -  ][  -  ][  -  ][  -  ][  -  ]
 W. Change username
@@ -48,7 +48,8 @@ no=lambda: 0
 
 s1=lambda: download(update=False,auto_find=True)
 s1u=lambda: download(update=True,auto_find=True)
-s2=lambda: download_comments()
+s2=lambda: download_comments(update=False)
+s2u=lambda: download_comments(update=True)
 
 s3=lambda: markdown_all_diary(reset=True)
 s4=lambda: download_pics()
@@ -61,12 +62,12 @@ toggle_pics_lambda=lambda: s.toggle_pics()
 toggle_html_lambda=lambda: s.toggle_html()
 
 scenarios={
-    'A':[s1,	no,	s3,	s4,	s5,	s6,	s7],
-    'B':[s1u,	no,	s3,	s4,	s5,	s6,	s7],
-    'C':[s1u,	no,	no,	no,	no,	no,	no],
-    'D':[s1,	no,	no,	no,	no,	no,	no],
-    'E':[no,	no,	s3,	s4,	s5,	s6,	s7],
-	'F':[no,	s2,	no,	no,	no,	no,	no],
+    'A':[s1,	s2,	    s3,	s4,	s5,	s6,	s7],
+    'B':[s1u,	s2u,	s3,	s4,	s5,	s6,	s7],
+    'C':[s1u,	s2u,	no,	no,	no,	no,	no],
+    'D':[s1,	s2,	    no,	no,	no,	no,	no],
+    'E':[no,	no,	    s3,	s4,	s5,	s6,	s7],
+	'F':[no,	s2,	    no,	no,	no,	no,	no],
     'W':[change_username_lambda],
     'X':[toggle_html_lambda],
     'Y':[toggle_pics_lambda],
