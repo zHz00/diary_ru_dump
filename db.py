@@ -114,7 +114,7 @@ def add_post(post_id,url,date,time,title,comments_n,tags,contents):
     found=db_cursor.fetchall()
     if(len(found)>0):
         #пост найден, надо его обновить
-        comments_n_old=get_post_comments_downloaded(post_id)
+        comments_n_old=get_comments_downloaded(post_id)
         db_cursor.execute('''UPDATE POSTS SET
         (POST_ID,URL,DATE,TIME,TITLE,COMMENTS_N,CONTENTS)=
         (?,?,?,?,?,?,?)
@@ -380,11 +380,17 @@ def get_tags_list():
         list.append(id['TAG'])
     return list
 
-def get_post_comments_list(post_id:int):
+def get_comments_list(post_id:int,deleted:bool=True):
     global db_cursor
-    db_cursor.execute('''SELECT COMMENT_ID FROM COMMENTS
-    WHERE POST_ID=(?)
-    ''',(post_id,))
+    if deleted:
+        db_cursor.execute('''SELECT COMMENT_ID FROM COMMENTS
+        WHERE POST_ID=(?)
+        ''',(post_id,))
+    else:
+        db_cursor.execute('''SELECT COMMENT_ID FROM COMMENTS
+        WHERE POST_ID=(?) AND
+        DELETED=0
+        ''',(post_id,))
     fetch=db_cursor.fetchall()
     list=[]
     for id in fetch:
@@ -392,13 +398,13 @@ def get_post_comments_list(post_id:int):
     return list    
     
 
-def get_post_comments_n(post_id:int) -> int:
+def get_comments_n(post_id:int) -> int:
     global db_cursor
     db_cursor.execute('''SELECT COMMENTS_N FROM POSTS WHERE POST_ID=(?)
     ''',(post_id,))
     return db_cursor.fetchone()['COMMENTS_N']   
 
-def get_post_comments_downloaded(post_id:int) -> int:
+def get_comments_downloaded(post_id:int) -> int:
     global db_cursor
     db_cursor.execute('''SELECT COUNT (*) 
     AS COMMENTS_N_DOWNLOADED 
@@ -445,6 +451,24 @@ def update_comments_n(post_id:int,n:int):
     db_link.commit()
     return res
 
+def get_comment_date_time(comment_id):
+    global db_cursor
+    db_cursor.execute('''SELECT DATE,TIME FROM COMMENTS WHERE COMMENT_ID=(?)
+    ''',(comment_id,))
+    res=db_cursor.fetchone()
+    return (res['DATE'],res['TIME'])
+
+def get_comment_author(comment_id):
+    global db_cursor
+    db_cursor.execute('''SELECT AUTHOR FROM COMMENTS WHERE COMMENT_ID=(?)
+    ''',(comment_id,))
+    return (db_cursor.fetchone()['AUTHOR'])
+
+def get_comment_contents(comment_id):
+    global db_cursor
+    db_cursor.execute('''SELECT CONTENTS FROM COMMENTS WHERE COMMENT_ID=(?)
+    ''',(comment_id,))
+    return (db_cursor.fetchone()['CONTENTS'])
 
 
 
@@ -480,10 +504,10 @@ if __name__=="__main__":
     add_link(1,"TEST",2,"https://example.com")
     add_link(2,"TEST",-1,"https://example.com")
     add_link(2,"TEST",1,"https://example.com")
-    add_comment(1,100,"date","time","me","test")
-    add_comment(2,100,"date","time","me","test")
-    add_comment(3,100,"date","time","me","test")
-    add_comment(4,100,"date","time","me","test")
+    add_comment(1,100,"date1","time1","me","test")
+    add_comment(2,100,"date2","time2","me","test")
+    add_comment(3,100,"date3","time3","me","test")
+    add_comment(4,100,"date4","time4","me","test")
     add_comment(4,100,"date2","time2","me2","test2")
     mark_deleted_comment(3)
     print("get_post_contents(1):",get_post_contents(1))
@@ -500,8 +524,18 @@ if __name__=="__main__":
     print("get_links_list_dict()",get_links_list_dict())
     print("get_post_fname(1):",get_post_fname(1))
     print("get_posts_list_at_date('test_date')):",get_posts_list_at_date("test_date")) 
-    print("get_post_comments_n(100):",get_post_comments_n(100))
-    print("get_post_comments_downloaded(100):",get_post_comments_downloaded(100))
-    print("get_post_comments_list(100)",get_post_comments_list(100))
+    print("get_comments_n(100):",get_comments_n(100))
+    print("get_comments_downloaded(100):",get_comments_downloaded(100))
+    print("get_comments_list(100)",get_comments_list(100))
+    print("get_comments_list(100)",get_comments_list(100,deleted=True))
+    print("get_comments_list(100)",get_comments_list(100,deleted=False))    
     print("update_comments_n(100,5)",update_comments_n(100,5))
+    list=get_comments_list(100)
+    for id in list:
+        print(id)
+        print("get_comments_date_time",get_comment_date_time(id))
+        print("get_comment_author",get_comment_author(id))
+        print("get_comment_contents",get_comment_contents(id))
+
+
     close()

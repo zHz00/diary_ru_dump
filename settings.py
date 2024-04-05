@@ -34,11 +34,13 @@ tg_ph_token=""
 tg_channel_token=""
 tg_channel_name=""
 
-#Нужны ли картинки?
+#Нужны ли картинки? (для веселья)
 download_pics=True
 
 #Нужны ли исходные html-файлы? (для отладки)
 download_html=False
+#нужны ли комментарии? (для полноты картины)
+download_comments=True
 
 def toggle_pics():
     global download_pics
@@ -50,6 +52,10 @@ def toggle_pics():
 def toggle_html():
     global download_html
     download_html=not download_html
+
+def toggle_comments():
+    global download_comments
+    download_comments=not download_comments
 
 
 #Тут надо придумать шаблон для поиска номеров постов. Если не знаете, что делать, замените "00" на необходимый ник.

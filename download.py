@@ -405,7 +405,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
 def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
     comments_on_page=30
-    comments_existing_ids=db.get_post_comments_list(post_id)
+    comments_existing_ids=db.get_comments_list(post_id)
     urls=[]
     pages=n//comments_on_page+1
     comments_n_actual=0
@@ -498,6 +498,9 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
 
 def download_comments(update:bool):
     print("Stage 2 of 7: Downloading (updating) comments")
+    if s.download_comments==False:
+        print("Skip.")
+        return
     db.connect()
     if update==True:
         s.diary_url_mode=s.dum.newest_comments
@@ -509,8 +512,8 @@ def download_comments(update:bool):
     posts_comments_n=[]
     for post_id in tqdm.tqdm(posts):
         print(f"\rChecking post #{post_id}...",end="\r")
-        n=db.get_post_comments_n(post_id)
-        if n!=db.get_post_comments_downloaded(post_id):
+        n=db.get_comments_n(post_id)
+        if n!=db.get_comments_downloaded(post_id):
             posts_to_download.append(post_id)
             posts_comments_n.append(n)
     print(f"{len(posts_to_download)} posts to update...")

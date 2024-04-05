@@ -1,6 +1,5 @@
 import requests
 import json
-import html.parser
 from bs4 import BeautifulSoup
 import time
 import settings as s

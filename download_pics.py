@@ -10,6 +10,14 @@ import settings as s
 import init
 import db
 
+def check_length(name:str)->str:
+    name=name.replace("%","-")#с процентами в именах беда
+    if len(name)<200:
+        return name
+    #расширение попробуем сохранить
+    print("Warning! Too long name! ["+name+"]")
+    return name[:195]+name[-5:]
+
 def download_pics(post_id=-1) -> None:
     print("Stage 4 of 7: Downloading images...")
     if s.download_pics==False:
@@ -81,7 +89,7 @@ def download_pics(post_id=-1) -> None:
             pic_names.add(pic_name)
 
 
-        pic_full_name=s.base_folder+s.pics_folder+pic_name
+        pic_full_name=s.base_folder+s.pics_folder+check_length(pic_name)
         if(Path(pic_full_name).is_file()):
             print(percentage_header+pic_url+" already downloaded. Skipping...")
             pic_skipped+=1
@@ -110,6 +118,7 @@ def download_pics(post_id=-1) -> None:
                 pic_errors+=1
                 continue                
 
+        pic_name=check_length(pic_name)
         out_pic=open(s.base_folder+s.pics_folder+pic_name,"wb")
         out_pic.write(pic.content)
         out_pic.close()

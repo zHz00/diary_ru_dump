@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 
 import settings as s
+import download_pics
 import init
 import db
 
@@ -55,7 +56,7 @@ def replace_urls() -> None:
         pic_name=os.path.basename(urlparse(pic_url.strip()).path).strip()
         post_name=pic['POST_FNAME']
 
-        post_replace(s.base_folder+post_name+".md",pic_url,s.pics_folder+pic_name)
+        post_replace(s.base_folder+post_name+".md",pic_url,s.pics_folder+download_pics.check_length(pic_name))
 
     links=[]
     link={}

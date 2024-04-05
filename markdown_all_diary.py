@@ -50,12 +50,32 @@ def get_post_as_html(post_id: int):
     add_times(times_md)#6
     for tag in tags_db:
         if s.diary_url_mode!=s.dum.one_post:
-            out_page.find("body").append(BeautifulSoup("[["+re.sub(r'[\\/*?:"<>|]',"",tag).strip()+"]] <br />", 'lxml'))
+            out_page.find("body").append(BeautifulSoup("[["+re.sub(r'[\\/*?:"<>|]',"",tag).strip()+"]]", 'lxml'))
         else:
             out_page.find("body").append(BeautifulSoup("<div>#"+re.sub(r'[\\/*?:"<>|]',"",tag).replace(" ","_").replace("-","_").strip()+"</div><br />", 'lxml'))
     add_times(times_md)#7
     if s.diary_url_mode!=s.dum.one_post:
         out_page.find("body").append(BeautifulSoup("ID: p"+str(post_id)+"<br />", 'lxml'))
+
+    #будем добавлять комментарии
+
+    if s.download_comments==True and s.diary_url_mode!=s.dum.one_post:
+        comments_header=BeautifulSoup("<h2></h2>", 'lxml')
+        comments_n=db.get_comments_downloaded(post_id)
+        if comments_n!=0:
+            comments_header.find("h2").string=f"Комментарии: {db.get_comments_downloaded(post_id)}"
+        else:
+            comments_header.find("h2").string=f"(Комментариев нет)"
+        out_page.find("body").append(comments_header)
+        out_page.find("body").append(BeautifulSoup("<br />", 'lxml'))
+        comments_list=db.get_comments_list(post_id,deleted=False)
+        c_len=len(comments_list)
+        for idx,c_id in enumerate(comments_list):
+            c_date,c_time=db.get_comment_date_time(c_id)
+            c_author=db.get_comment_author(c_id)
+            c_contents=db.get_comment_contents(c_id)
+            out_page.find("body").append(BeautifulSoup("<hr /><table><tr><th>        #        </th><th>             Дата             </th><th>                    Автор                    </th><th>          ID          </th></tr><tr><td>("+str(idx+1)+"/"+str(c_len)+")</td><td>"+c_date+", "+c_time+"</td><td>"+c_author+"</td><td>c"+str(c_id)+"</td></tr></table><br />"+c_contents, 'lxml'))
+
 
     contents=str(out_page).replace("\n","").replace("\r","").replace("</br>","<br/>").replace("<br>","<br/>")
     contents=contents.replace("<tbody>","").replace("</tbody>","")
@@ -120,6 +140,8 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
     print(f"\n[DB]Found {file_list_len_db} posts...")
 
     #сначала пробежимся по всем постам и создадим файлы, соответствующие тегам
+    #на самом деле это сейчас уже не нужно, т.к. изначально эти файлы служили для поиска тегов при разметке
+    #но сейчас я использую БД для хранения списка тегов, так что зачем мне этот набор? надо подумать
 
     print("\nCreating tags list...")
     renamed_count=0
@@ -192,7 +214,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         #contents=contents.replace("&lt;","\\&lt;")
         #добываем ссылки и картинки
         add_times(times_md)#8
-        bs=BeautifulSoup(contents,"html.parser")
+        bs=BeautifulSoup(contents,"lxml")
         for pic in bs.find_all("img"):
             if pic.parent.name=="pre" or pic.parent.parent.name=="pre":
                 continue

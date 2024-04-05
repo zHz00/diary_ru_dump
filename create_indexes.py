@@ -8,6 +8,7 @@ import re
 import settings as s
 import init
 import db
+import tqdm
 
 
 days_with_no_posts=0   
@@ -45,7 +46,7 @@ def get_day(year: int,week: int,weekday_col: int) -> int:
 
 def generate_post_list_db(post_list: typing.List[int]) -> str:
     (post_date,post_time)=db.get_post_date_time(post_list[0])
-    print(f"[DB]At {post_date} we have {len(post_list)} posts...")
+    #print(f"[DB]At {post_date} we have {len(post_list)} posts...")
     bare_filename=s.day_list_prefix+post_date+".md"
     filename=s.base_folder+s.indexes_folder+s.days_folder+bare_filename
     list_file=open(filename,"w",encoding=s.post_encoding,newline="\n")
@@ -64,31 +65,38 @@ def generate_year_db(year: int) -> str:
     global days_with_no_posts
     global days_with_one_post
     global days_with_many_posts
+    global first_day
+    global last_day
     text=""
     text+=f"## {year}\n"
-    for h_col in range(months_cols*days_in_week_markup):
-        text+="| "
-    text+="|\n"
-    for h_col in range(months_cols*days_in_week_markup):
-        text+="| ---"
-    text+="|\n"
+    #for h_col in range(months_cols*days_in_week_markup-1):
+    #    text+="| "
+    #text+="|\n"
+    #for h_col in range(months_cols*days_in_week_markup-1):
+    #    text+="| ---"
+    #text+="|\n"
 
     for week in range(0,weeks_in_month*months_rows):
         #каждый месяц максимум 6 недель плюс строчка на дни недели, множим на 4, т.к. календарь 3 на 4 блоком
         week_in_row=week%weeks_in_month
         if week_in_row==0:#выводим месяц
-            for weekday_col in range(months_cols*days_in_week_markup):
+            for weekday_col in range(months_cols*days_in_week_markup-1):
                 if(weekday_col%days_in_week_markup==0):
                     text+="| **"+roman_month[get_month(week,weekday_col)]+"** "
                 else:
                     text+="| "
             text+="|\n"
+            if week==0:#после первого списка месяцев надо сделать отсечку заголовка
+                for h_col in range(months_cols*days_in_week_markup-1):
+                    text+="| ---"
+                text+="|\n"
+
         if week_in_row==1:#выводим дни недели
-            for weekday_col in range(months_cols*days_in_week_markup):
+            for weekday_col in range(months_cols*days_in_week_markup-1):
                 text+="| "+weekdays[weekday_col%days_in_week_markup]+" "
             text+="|\n"
         if week_in_row>1:
-            for weekday_col in range(months_cols*days_in_week_markup):
+            for weekday_col in range(months_cols*days_in_week_markup-1):
                 day=get_day(year,week,weekday_col)
                 if day==0:
                     day_str=""
@@ -102,9 +110,9 @@ def generate_year_db(year: int) -> str:
                         day_str="[["+db.get_post_fname(post_list[0])+"\|"+day_str+"]]"
                         days_with_one_post+=1
                     if len(post_list)>1:#у нас несколько постов
-                        day_str="[["+generate_post_list_db(post_list)+"\|"+day_str+"]]"
+                        day_str="**[["+generate_post_list_db(post_list)+"\|"+day_str+"]]**"
                         days_with_many_posts+=1
-                    if len(post_list)==0:
+                    if len(post_list)==0 and today>first_day and today<last_day:
                         days_with_no_posts+=1
                 text+="| "+day_str+" "
             text+="|\n"
@@ -115,8 +123,10 @@ def generate_year_db(year: int) -> str:
 
 def create_indexes() -> None:
     print("Stage 6 of 7: Creating indexes...")
-    print("Creating full list...",end="")
-    file_list=os.listdir(s.base_folder)
+    print("Creating full list...")
+
+    global first_day
+    global last_day
 
     db.connect()
     # I. Полный список постов
@@ -125,7 +135,7 @@ def create_indexes() -> None:
     post_index=open(s.base_folder+s.indexes_folder+s.list_file_name,"w",encoding=s.post_encoding,newline="\n")
     post_index.write("| Дата | Заголовок |\n| --- | --- |\n")
     post_list_db=db.get_posts_list()
-    for post_id in post_list_db:
+    for post_id in tqdm.tqdm(post_list_db,ascii=True):
         post_file_name=db.get_post_fname(post_id)
         post_title=db.get_post_title(post_id)
         (post_date,post_time)=db.get_post_date_time(post_id)
@@ -141,8 +151,11 @@ def create_indexes() -> None:
     (last_date,last_time)=db.get_post_date_time(post_list_db[-1])
     year_start_db=datetime.datetime.fromisoformat(first_date).year
     year_end_db=datetime.datetime.fromisoformat(last_date).year 
+    first_day=datetime.datetime.fromisoformat(first_date)
+    last_day=datetime.datetime.fromisoformat(last_date)
     calendar_text=""
-    for year in range(year_start_db,year_end_db+1):
+    print("Creating calendar...")
+    for year in tqdm.tqdm(range(year_start_db,year_end_db+1),ascii=True):
         calendar_text+=generate_year_db(year)
 
     post_calendar=open(s.base_folder+s.indexes_folder+s.calendar_file_name,"w",encoding=s.post_encoding,newline="\n")
@@ -160,8 +173,8 @@ def create_indexes() -> None:
     common_tag_list_file=open(s.base_folder+s.indexes_folder+s.tags_file_name,"w",encoding=s.post_encoding,newline="\n")
     common_tag_list_file.write("| Тег | N |\n| --- | --- |\n")
 
-    for tag in tags_list:
-        print("[DB]Processing tag: "+tag)
+    for tag in tqdm.tqdm(tags_list,ascii=True):
+        #print("[DB]Processing tag: "+tag)
         post_list=db.get_posts_list_at_tag(tag)
         tag_safe_name=re.sub(r'[\\/*?:"<>|]',"",tag.strip())
         common_tag_list_file.write(f"| [[{tag_safe_name}\|{tag}]] | {len(post_list)} |\n")
@@ -178,6 +191,8 @@ def create_indexes() -> None:
             date_formatted=datetime.datetime.fromisoformat(post_date).strftime("%Y&#8209;%m&#8209;%d")
             tag_file.write(f"| {date_formatted} | [[{post_fname}\|{post_title}]] |\n")
         tag_file.close()
+
+    print(f"Done. Processed tags: {len(tags_list)}")
 
     common_tag_list_file.close()
 

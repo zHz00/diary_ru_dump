@@ -24,6 +24,7 @@ Stage 7: Update creation times (Windows only)
 
 Working with pictures: {"Enabled" if s.download_pics==True else "Disabled"}
 Save HTML in addition: {"Enabled" if s.download_html==True else "Disabled"}
+Save comments: {"Enabled" if s.download_comments==True else "Disabled"}
 Diary url: {s.diary_url}
 Output folder: {s.base_folder}
 
@@ -31,13 +32,14 @@ Possible scenarios:
 
 Stage:                     [  1  ][  2  ][  3  ][  4  ][  5  ][  6  ][  7  ]
 
-A. Total (default)         [  +  ][  -  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
-B. Update + markup         [ +/- ][ +/- ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
-C. Update (no markup)      [ +/- ][ +/- ][  -  ][  -  ][  -  ][  -  ][  -  ]
-D. Download (no markup)    [  +  ][  +  ][  -  ][  -  ][  -  ][  -  ][  -  ]
+A. Total (default)         [  +  ][  +  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
+B. Update + markup         [ +/- ][ {"+/-" if s.download_comments==True else " - "} ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
+C. Update (no markup)      [ +/- ][ {"+/-" if s.download_comments==True else " - "} ][  -  ][  -  ][  -  ][  -  ][  -  ]
+D. Download (no markup)    [  +  ][  {"+" if s.download_comments==True else "-"}  ][  -  ][  -  ][  -  ][  -  ][  -  ]
 E. Markup                  [  -  ][  -  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
-F. Download comments       [  -  ][  +  ][  -  ][  -  ][  -  ][  -  ][  -  ]
-W. Change username
+F. Download comments       [  -  ][  {"+" if s.download_comments==True else "-"}  ][  -  ][  -  ][  -  ][  -  ][  -  ]
+V. Change username
+W. Toggle comments enable/disable mode
 X. Toggle save html enable/disable mode (debug purpose)
 Y. Toggle pics enable/disable mode
 Z. Quit
@@ -60,6 +62,7 @@ s7=lambda: update_times()
 change_username_lambda=lambda: s.enter_username()
 toggle_pics_lambda=lambda: s.toggle_pics()
 toggle_html_lambda=lambda: s.toggle_html()
+toggle_comments_lambda=lambda: s.toggle_comments()
 
 scenarios={
     'A':[s1,	s2,	    s3,	s4,	s5,	s6,	s7],
@@ -68,7 +71,8 @@ scenarios={
     'D':[s1,	s2,	    no,	no,	no,	no,	no],
     'E':[no,	no,	    s3,	s4,	s5,	s6,	s7],
 	'F':[no,	s2,	    no,	no,	no,	no,	no],
-    'W':[change_username_lambda],
+    'V':[change_username_lambda],
+    'W':[toggle_comments_lambda],
     'X':[toggle_html_lambda],
     'Y':[toggle_pics_lambda],
     'Z':[no]
@@ -81,6 +85,7 @@ continue_execution={
     'D':False,
     'E':False,
     'F':False,
+    'V':True,
     'W':True,
     'X':True,
     'Y':True,
