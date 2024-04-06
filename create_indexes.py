@@ -120,7 +120,7 @@ def generate_year_db(year: int) -> str:
     return text
 
 
-
+@init.log_call
 def create_indexes() -> None:
     print("Stage 6 of 7: Creating indexes...")
     print("Creating full list...")

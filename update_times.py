@@ -2,12 +2,13 @@ import time
 import datetime
 import os
 from win32_setctime import setctime
+import tqdm
 
 import settings as s
 import init
 
 def update_times() -> None:
-    print("Stage 6 of 6: Update file creation time...",end="")
+    print("Stage 7 of 7: Update file creation time...")
     if os.name!="nt":
         print("Skip.\nupdate_times now work only on Windows! Sorry...")
         return
@@ -16,7 +17,7 @@ def update_times() -> None:
 
     counter=0
 
-    for post_file_name in file_list:
+    for post_file_name in tqdm.tqdm(file_list,ascii=True):
         if post_file_name.endswith(".md")==False:
             continue
         post_file_name=s.base_folder+post_file_name.strip()

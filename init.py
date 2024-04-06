@@ -2,6 +2,7 @@ import settings as s
 import os
 import shutil
 from pathlib import Path
+import logging as l
 
 def create_folders() -> None:
     os.makedirs(s.base_folder+s.pics_folder,exist_ok=True)
@@ -104,3 +105,17 @@ def delete_folders() -> None:
     delete_folder_without_exception(s.base_folder+s.obsidian_settings_folder)
     delete_folder_without_exception(s.base_folder)
     
+def log_call(func):
+    def wrap(*args, **kwargs):
+        # Log the function name and arguments
+        l.info(f"Calling {func.__name__} with args: {args}, kwargs: {kwargs}")
+        
+        # Call the original function
+        result = func(*args, **kwargs)
+        
+        # Log the return value
+        #l.info(f"{func.__name__} returned: {result}")
+        
+        # Return the result
+        return result
+    return wrap

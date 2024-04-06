@@ -8,12 +8,14 @@ import time
 import re
 from requests.sessions import RequestsCookieJar
 from pathlib import Path
-
-import settings as s
-import init
-import typing
-import db
 import tqdm
+import typing
+import logging as l
+
+import init
+import settings as s
+import db
+
 
 def convert_to_old_style(url: str) -> str:
     #новые ссылки типа имя.дайари.ру/ должны быть превращены в дайари.ру/~имя, чтобы совпадало со старыми дампами
@@ -32,12 +34,12 @@ def convert_to_old_style(url: str) -> str:
 def remove_newlines_ex(bs4obj):
     for pre in bs4obj.find_all("pre"):
         if hasattr(pre,"string") and pre.string is not None:
-            print("'pre' has inner string : ")
-            print("S:"+pre.string)
+            l.info("'pre' has inner string : ")
+            l.info("S:"+pre.string)
             pre.string=pre.string.replace("\n","SUPERSECRETNEWLINE")
-            print("end of replace")
+            l.info("end of replace")
         else:
-            print(pre)
+            l.info(pre)
     return bs4obj.prettify().replace("\r","").replace("\n","").replace("SUPERSECRETNEWLINE","<br />")
     
 PRE_START="<pre>"
@@ -72,27 +74,27 @@ PRE_END="</pre>"
     
 def change_pre(html_txt, start=0):
     beg_outer=html_txt.find(PRE_START,start)
-    print("beg_outer:"+str(beg_outer))
+    l.info("beg_outer:"+str(beg_outer))
     if(beg_outer==-1):
-        print("Done parsing...")
+        l.info("Done parsing...")
         return html_txt
     end_outer=html_txt.find(PRE_END,start)
-    print("end_outer:"+str(end_outer))
+    l.info("end_outer:"+str(end_outer))
     if(end_outer==-1):
-        print("Error parsing 1...")
+        l.info("Error parsing 1...")
         return html_txt        
     beg=html_txt.find(">",beg_outer+len(PRE_START))+1#пропускаем тег textarea
-    print("beg:"+str(beg))
+    l.info("beg:"+str(beg))
     if(beg==-1):
-        print("Error parsing 2...")
+        l.info("Error parsing 2...")
         return html_txt
     end=html_txt.rfind("<",beg,end_outer)#закрытие тоже пропускаем
-    print("end:"+str(end))
+    prl.infoint("end:"+str(end))
     if(end==-1):
-        print("Error parsing 3...")
+        l.info("Error parsing 3...")
         return html_txt
-    print("RANGE:"+str(beg)+","+str(end))
-    print("STR:"+html_txt[beg:end])
+    l.info("RANGE:"+str(beg)+","+str(end))
+    l.info("STR:"+html_txt[beg:end])
     return change_pre(html_txt[:beg]+html_txt[beg:end].replace("<","&lt;").replace(">","&gt;")+html_txt[end:],end_outer+len(PRE_END))
 
 def convert_date(date: str) -> str:
@@ -123,11 +125,14 @@ def get_cookies() -> None:
         cookies.set_cookie(cookie) 
     return cookies
 
+@init.log_call
 def find_last_page() -> int:
     if hasattr(find_last_page,"last_num_cached"):
+        l.info(f"Last page already found: {find_last_page.last_num_cached}")
         print(f"Last page already found: {find_last_page.last_num_cached}")
         return find_last_page.last_num_cached
 
+    l.info("Finding last page...")
     print("Finding last page...")
     page_url=s.diary_url
     print("Downloading "+page_url+"...")
@@ -142,13 +147,17 @@ def find_last_page() -> int:
                 if href.has_attr("href") and last_num_idx!=-1 and len(href["href"])>last_num_idx+1:
                     last_num=int(href["href"][last_num_idx+1:])
                     break
+    l.info(f"Last page: {last_num}")
     print(f"Last page: {last_num}")
     find_last_page.last_num_cached=last_num
     return last_num
     
+@init.log_call
 def find_last_post() -> int:
+    l.info("Finding last post...")
     print("Finding last post...")
     page_url=s.diary_url
+    l.info("Downloading "+page_url+"...")
     print("Downloading "+page_url+"...")
     page = requests.get(page_url,cookies=get_cookies())
     page = BeautifulSoup(page.text, 'lxml')
@@ -156,8 +165,10 @@ def find_last_post() -> int:
     for div in post_divs:
         if div.has_attr("class") and len(div["class"])>1 and div["class"][0]=="item" and div["class"][1]=="first":
             post_id=int((div["id"])[4:])
+            l.info("Last post:"+str(post_id))
             print("Last post:"+str(post_id))
             return post_id
+    l.info("no last post found")
     print("no last post found")
     return 0
 
@@ -169,7 +180,7 @@ def test_epigraph(epigraph: typing.Dict[str,bool],test_name: str) -> bool:
         epigraph[test_name]=True
         return False
 
-
+@init.log_call
 def download(update: bool,auto_find: bool,post_id:int=0) -> None:
     db.connect()
     if s.diary_url_mode==s.dum.full and update==False:
@@ -228,9 +239,11 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         else:
             qmark_index=s.diary_url.find("?")
             page_url=s.diary_url[:qmark_index]+"/p"+str(post_id)+".htm"+s.diary_url[qmark_index:]
+            l.info("Page url="+page_url)
             print("Page url="+page_url)
         if s.diary_url_mode==s.dum.from_file:
             page_url+=".html"
+        l.info("Downloading "+page_url+"...")
         print("Downloading "+page_url+"...")
         if s.diary_url_mode!=s.dum.from_file:
             page = requests.get(page_url,cookies=get_cookies())
@@ -316,6 +329,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                         id_end=div.span.a["href"].rfind(".")#без заголовка, поэтому нижнего подчёркивания нет
                     posts_ids.append(div.span.a["href"][id_begin:id_end])
                     percentage=int(len(posts_ids)/(s.stop-s.start)*step*100)
+                    l.info(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
                     print(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
                 if class_name == "post-links":#новый дизайн
                     posts_links.append(convert_to_old_style(div.div.a["href"]))
@@ -325,6 +339,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                         id_end=div.a["href"].find(".",id_begin)#без заголовка, поэтому нижнего подчёркивания нет
                     posts_ids.append(div.div.a["href"][id_begin:id_end])
                     percentage=int(len(posts_ids)/abs(s.stop-s.start)*100)
+                    l.info(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
                     print(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
                 test_name="postInner"
                 if class_name==test_name:
@@ -374,7 +389,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         if s.diary_url_mode==s.dum.one_post:
             posts_ids=[posts_ids[0]]
         #там может ещё что-то обнаружиться в комментариях, но комментарии надо отдельно парсить, этого пока нет
-        print("writing posts: "+str(len(posts_ids)))
+        l.info("writing posts: "+str(len(posts_ids)))
 
         for x in range(len(posts_ids)):
             res=db.add_post(int(posts_ids[x]),posts_links[x],posts_dates[x],posts_times_s[x],posts_titles[x],posts_comments_n[x],posts_tags[x],posts_contents[x])
@@ -386,19 +401,23 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                 (res==db.db_ret.updated_comments_n_changed or res==db.db_ret.updated_comments_n_identical) and \
                 s.diary_url_mode==s.dum.full:
 
+                l.info(f"Update complete, found old posts. Saved pages={saved_pages}")
                 print("Update complete, found old posts.")
                 return
             if update==True and comments_n_changed==False and s.diary_url_mode==s.dum.newest_comments:
+                l.info("Update comments complete, found posts with equal comments counter.")
                 print("Update comments complete, found posts with equal comments counter.")
                 return            
 
         saved_pages+=1
+        l.info(f"Done saving. Waiting for {s.wait_time} sec...")
         print(f"Done saving. Waiting for {s.wait_time} sec...")
         time.sleep(s.wait_time)
 
 
     db.close()
 
+    l.info(f"Done. Downloadaed {len(posts_ids)} posts.")
     print(f"Done. Downloadaed {len(posts_ids)} posts.")
     if s.diary_url_mode==s.dum.one_post:#скачал один пост -- сообщи ид выше
         return post_id
@@ -414,6 +433,7 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
         urls.append(url)
 
         print(f"[{percentage}%, {left} posts left] Comments: {n}. Downloading "+url+"...")
+        l.info(f"[{percentage}%, {left} posts left] Comments: {n}. Downloading "+url+"...")
         page = requests.get(url,cookies=get_cookies())
         page = BeautifulSoup(change_pre(page.text), 'lxml')
             
@@ -447,7 +467,7 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
                     if div.has_attr("data-id"):
                         c_id.append(div["data-id"])
                     else:
-                        print("Warning! No ID!")
+                        l.info("Warning! No ID! POST_ID: "+str(post_id))
                 if class_name == "authorName" and div.has_attr("style")==False:#авторство есть и у поста, с которого начинается ветка, но там есть дополнительный тег
                     contents=div.a.strong.contents
                     if(len(contents)==0):
@@ -475,7 +495,7 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
         cl4=len4==len5
         c_common=cl1 and cl2 and cl3 and cl4
         if c_common==False:
-            print("Warning! Different length of fields while downloading comments")
+            l.info(f"Warning! Different length of fields while downloading comments. post_id={post_id},id:{len1},author:{len2},date:{len3},time:{len4},contents:{len5}")
         else:
             #можно добавлять
             for x in range(len(c_id)):
@@ -489,13 +509,13 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
 
     for comment_id in comments_existing_ids:
         #те комменты которые остались -- это те что есть в базе, но мы их не нашли. почему? потому что их удалили. надо их пометить в базе
+        l.info(f"Deleting comment #{comment_id}...")
         print(f"Deleting comment #{comment_id}...")
         db.mark_deleted_comment(comment_id)
         comments_n_actual-=1
-    if(n>comments_on_page):
-        print(urls)
     db.update_comments_n(post_id,comments_n_actual)
 
+@init.log_call
 def download_comments(update:bool):
     print("Stage 2 of 7: Downloading (updating) comments")
     if s.download_comments==False:
@@ -510,8 +530,7 @@ def download_comments(update:bool):
     posts=db.get_posts_list()
     posts_to_download=[]
     posts_comments_n=[]
-    for post_id in tqdm.tqdm(posts):
-        print(f"\rChecking post #{post_id}...",end="\r")
+    for post_id in tqdm.tqdm(posts,ascii=True):
         n=db.get_comments_n(post_id)
         if n!=db.get_comments_downloaded(post_id):
             posts_to_download.append(post_id)

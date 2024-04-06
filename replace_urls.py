@@ -5,6 +5,8 @@ import re
 import os
 from urllib.parse import urlparse
 from pathlib import Path
+import logging as l
+import tqdm
 
 import settings as s
 import download_pics
@@ -33,6 +35,7 @@ def strip_post_id(url: str) -> str:
         return url[id_begin:id_end]
     return "-1"
 
+@init.log_call
 def replace_urls() -> None:
 
     print("Stage 5 of 7: Replacing cross links...")
@@ -56,7 +59,11 @@ def replace_urls() -> None:
         pic_name=os.path.basename(urlparse(pic_url.strip()).path).strip()
         post_name=pic['POST_FNAME']
 
-        post_replace(s.base_folder+post_name+".md",pic_url,s.pics_folder+download_pics.check_length(pic_name))
+        res=urlparse(pic_url)#проверим, что у нас нормальный урл
+        if(len(res.path)>0):
+            post_replace(s.base_folder+post_name+".md",'('+pic_url+')','('+s.pics_folder+download_pics.check_length(pic_name)+')')
+        else:
+            l.info("warning! empty pic name! ["+pic_url+"], post: "+post_name)
 
     links=[]
     link={}
@@ -64,11 +71,10 @@ def replace_urls() -> None:
 
     #прочтём список ссылок
 
-    for link in links_list_db:
+    print("Processing links...")
+    for link in tqdm.tqdm(links_list_db,ascii=True):
 
         links_list_len=len(links_list_db)
-        percentage=int(n/links_list_len*100)
-        print(f"[{percentage}%] Processing {n} links of {links_list_len}",end="\r")
         n+=1
 
         link_is_pic=False
@@ -76,33 +82,37 @@ def replace_urls() -> None:
             if link['SRC_URL'].strip().lower().endswith(test_str.lower())!=False:
                 link_is_pic=True
         if link_is_pic and s.download_pics==True:
-            link_dest=s.pics_folder+os.path.basename(urlparse(link['SRC_URL'].strip()).path).strip()
-            print(f"Replacing {link['SRC_URL']} to {link_dest}")
+            base_name=os.path.basename(urlparse(link['SRC_URL'].strip()).path).strip()
+            link_dest=s.pics_folder+download_pics.check_length(base_name)
+            l.info(f"Replacing {link['SRC_URL']} to {link_dest}")
             post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",link['SRC_URL'],link_dest.replace(" ","%20"))        
         else:
             #обрабатываем перекрёстные ссылки
+            if link["SRC_POST_FNAME"]=="Советы по Pixel Dungeon":
+                post_name=post_name
+
             if link['SRC_DEST_POST_ID']!=-1 and link['DEST_POST_FNAME'] is not None:
-                print(f"Replacing {link['SRC_URL']} to {link['DEST_POST_FNAME']}")
+                l.info(f"Replacing {link['SRC_URL']} to {link['DEST_POST_FNAME']}")
+                res=urlparse(link['SRC_URL'])
+                if res.fragment.isdigit():
+                    l.info("Special handling of internal comment link! SRC_URL="+link['SRC_URL']+", DEST_POST_FNAME="+link['DEST_POST_FNAME'])
+                    link['DEST_POST_FNAME']+="#^c"+res.fragment
+                    l.info("Resulting dest:"+link['DEST_POST_FNAME'])
                 if re.search(r'[\[\]\^\#\|]',link['DEST_POST_FNAME']):
                     warning=f"Attention! Special character in dest name! {link['DEST_POST_FNAME']}"
-                    print(warning)
+                    l.info(warning)
                     not_found.append(warning)
-                    post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",link['SRC_URL'],(link['DEST_POST_FNAME'].replace(" ","%20")))
+                    post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",'('+link['SRC_URL']+')','('+(link['DEST_POST_FNAME'].replace(" ","%20"))+')')
                     #post_replace(s.base_folder+link_src["name"]+".md",link_src['url'],("[["+link_dest['name'].replace(" ","%20")+"\|"+link_dest['name'].replace(" ","%20")+"]]"))
                 else:
-                    post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",link['SRC_URL'],(link['DEST_POST_FNAME'].replace(" ","%20")))
+                    post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",'('+link['SRC_URL']+')','('+(link['DEST_POST_FNAME'].replace(" ","%20"))+')')
 
             if link['SRC_DEST_POST_ID']!=-1 and link['DEST_POST_FNAME'] is None:#если -1, то там обычный урл без номера, конечно он не будет найден
                 warning="WARNING! Destination post not found: "+str(link['SRC_DEST_POST_ID'])+ "; url: "+link['SRC_URL']
+                l.info(warning)
                 not_found.append(warning)
-                print(warning)
 
     db.close()
-
-    print("Absent links (one more time):")
-    for message in not_found:
-        print(message)
-    print("End (replace_urls)")
 
 if __name__=="__main__":
     init.create_folders()

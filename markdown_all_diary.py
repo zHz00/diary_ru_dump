@@ -12,6 +12,9 @@ import init
 import db
 import time
 import replace_urls
+import tqdm
+
+import logging as l
 
 times_md=[]
 
@@ -50,7 +53,7 @@ def get_post_as_html(post_id: int):
     add_times(times_md)#6
     for tag in tags_db:
         if s.diary_url_mode!=s.dum.one_post:
-            out_page.find("body").append(BeautifulSoup("[["+re.sub(r'[\\/*?:"<>|]',"",tag).strip()+"]]", 'lxml'))
+            out_page.find("body").append(BeautifulSoup("<div>[["+re.sub(r'[\\/*?:"<>|]',"",tag).strip()+"]]</div><br />", 'lxml'))
         else:
             out_page.find("body").append(BeautifulSoup("<div>#"+re.sub(r'[\\/*?:"<>|]',"",tag).replace(" ","_").replace("-","_").strip()+"</div><br />", 'lxml'))
     add_times(times_md)#7
@@ -74,7 +77,7 @@ def get_post_as_html(post_id: int):
             c_date,c_time=db.get_comment_date_time(c_id)
             c_author=db.get_comment_author(c_id)
             c_contents=db.get_comment_contents(c_id)
-            out_page.find("body").append(BeautifulSoup("<hr /><table><tr><th>        #        </th><th>             Дата             </th><th>                    Автор                    </th><th>          ID          </th></tr><tr><td>("+str(idx+1)+"/"+str(c_len)+")</td><td>"+c_date+", "+c_time+"</td><td>"+c_author+"</td><td>c"+str(c_id)+"</td></tr></table><br />"+c_contents, 'lxml'))
+            out_page.find("body").append(BeautifulSoup("<hr /><table><tr><th>        #        </th><th>             Дата             </th><th>                    Автор                    </th><th>          ID          </th></tr><tr><td>("+str(idx+1)+"/"+str(c_len)+")</td><td>"+c_date+", "+c_time+"</td><td>"+c_author+"</td><td>c"+str(c_id)+"</td></tr></table><br />"+c_contents+" ^c"+str(c_id), 'lxml'))
 
 
     contents=str(out_page).replace("\n","").replace("\r","").replace("</br>","<br/>").replace("<br>","<br/>")
@@ -112,7 +115,7 @@ def add_times(list):
     list.append((cur_time,cur_time-last_time))
 
 
-
+@init.log_call
 def markdown_all_diary(reset: bool,post_id:int=0) -> None:
     global times_md
 
@@ -147,7 +150,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
     renamed_count=0
     #DB
     tags_db=db.get_tags_list()
-    for tag in tags_db:
+    for tag in tqdm.tqdm(tags_db,ascii=True):
         tag_name=s.base_folder+s.tags_folder+re.sub(r'[\\/*?:"<>|]',"",tag.strip())+".md"
         test_path=Path(tag_name)
         if not test_path.is_file():
@@ -177,17 +180,18 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
     else:
         folder=s.base_folder
    
-    for post_id in file_list_db:
+    for post_id in tqdm.tqdm(file_list_db,ascii=True):
         add_times(times_loop)
         times_md=[]
         add_times(times_md)#0
         add_times(times_md)#1
         percentage=int(n/file_list_len_db*100)
-        print(f"[{percentage}%] {n} of {file_list_len_db} done...",end="\r")
         n+=1
         #сохраним содержимое
 
         out_name_file_base=re.sub(r'[\\/*?:"<>|]',"",db.get_post_title(post_id)).strip()
+        while len(out_name_file_base)>0 and out_name_file_base[0]==".":#второе условие не будет вычисляться, если первое ложно
+            out_name_file_base=out_name_file_base[1:]#убираем все стартовые точки, т.к. обсидиан неадекватно с ними работает
         if len(out_name_file_base)==0:
             out_name_file_base="[NOT PRINTABLE]"
         out_name_file=out_name_file_base
@@ -196,8 +200,9 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         test_path=Path(out_name)
         test_path_as_tag=Path(out_name_as_tag)
         append_num=0
+        renamed=False
         while test_path.is_file() or test_path_as_tag.is_file():
-            print(f"[{percentage}%]File "+out_name+" exists! Renaming...")
+            renamed=True
             out_name_file=out_name_file_base+"["+str(append_num)+"]"
             out_name=folder+out_name_file+".md"
             out_name_as_tag=folder+s.tags_folder+out_name_file+".md"
@@ -205,6 +210,9 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
             test_path_as_tag=Path(out_name_as_tag)
             append_num+=1
             renamed_count+=1
+        if renamed:
+            l.info(f"File "+out_name_file_base+".md exists! Renamed to: "+out_name_file)
+            renamed=False
         #имя файла готово, теперь надо его сохранить в словарь
 
         posts_list[post_id]=out_name_file
@@ -226,7 +234,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
             link_is_cross_link=False
             link_is_pic=False
             if re.search(r'[\[\]\^\#\|]',link.contents[0]):
-                print(f"Warning! \"a\" tag has forbidden characters: {link.contents}")
+                l.info(f"Warning! \"a\" tag has forbidden characters: {link.contents}")
             for test_str in s.cross_link_checking:
                 if link['href'].lower().find(test_str.lower())!=-1:
                     link_is_cross_link=True

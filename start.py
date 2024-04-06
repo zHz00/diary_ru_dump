@@ -8,6 +8,9 @@ from update_times import update_times
 import settings as s
 import init
 
+import datetime
+import logging as l
+
 
 hello_message=lambda:f'''diary.ru dump utility, version {s.version}.
 (C) zHz, 2022-2024. Licenced under MIT license, see readme.txt for details.
@@ -92,12 +95,20 @@ continue_execution={
     'Z':False,
 }
 
+logger=l.getLogger()
+file_handler=l.FileHandler(filename=s.dump_folder+"py_log"+datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")+".log",mode="w",encoding="utf-8")
+file_handler.setFormatter(l.Formatter("%(asctime)s %(levelname)s %(message)s"))
+file_handler.setLevel(l.INFO)
+logger.addHandler(file_handler)
+logger.setLevel(l.INFO)
+
 s.load_username()
 
 while True:
     print(hello_message())
     letter=input().upper()
     if letter in scenarios:
+        l.info("Starting scenario: "+letter)
         for function in scenarios[letter]:
             function()
         if continue_execution[letter]:

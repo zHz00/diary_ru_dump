@@ -102,6 +102,10 @@ def create_db():
     CREATE INDEX IF NOT EXISTS TAGS_LINKED_INDEX
     ON TAGS_LINKED(POST_ID)
     ''')
+    db_cursor.execute('''
+    CREATE INDEX IF NOT EXISTS "COMMENTS_INDEX" ON "COMMENTS" (
+	"POST_ID"
+    ''')
     db_link.commit()
 
 def add_post(post_id,url,date,time,title,comments_n,tags,contents):

@@ -1,6 +1,6 @@
 import init
 import enum
-version=7
+version=8
 
 uname="zHz00"
 session=""
@@ -107,31 +107,28 @@ temp_md_folder="temp_md/"
 #c:\diary\scripts <- сюда сложить питоновские файлы
 #c:\diary\dump <- тут будут метаданные постов и "сырые" посты в формате html
 
-pics_file="pics.txt"
-links_file="links.txt"
-
 list_file_name="Список.md"
 calendar_file_name="Календарь.md"
 tags_file_name="Теги.md"
 day_list_prefix="AT"
 
-pics_file_encoding="utf-8"
-links_file_encoding="utf-8"
 post_list_encoding="utf-8"
 post_encoding="utf-8"
+settings_file_encoding="utf-8"
 
 forbidden_pic_urls=["google.ru/search?q=","google.com/search?q=","chan.sankakustatic.com","img.rudepedexe1.com","img.totafofesos1.com"]
 user_agent = {'User-agent': 'Mozilla/5.0'}
 
 settings_file_name="username.txt"
 tokens_file_name="tokens.txt"
+placeholder_image_name="placeholder.png"
 
 db_name="posts.db"
 
 def enter_username() -> None:
     uname=input("Please enter username:")
     session=input("Please paste session ID, if diary has restricted access (otherwise press enter)")
-    settings_file=open(settings_file_name,"w",encoding=links_file_encoding)
+    settings_file=open(settings_file_name,"w",encoding=settings_file_encoding)
     settings_file.write(uname)
     settings_file.write(session)
     settings_file.close()
@@ -140,7 +137,7 @@ def enter_username() -> None:
 def load_username() -> None:
     global uname
     global session
-    settings_file=open(settings_file_name,"r",encoding=links_file_encoding)
+    settings_file=open(settings_file_name,"r",encoding=settings_file_encoding)
     uname=settings_file.readline().strip()
     session=settings_file.readline().strip()
     settings_file.close()
@@ -150,7 +147,7 @@ def load_tokens():
     global tg_ph_token
     global tg_channel_token
     global tg_channel_name
-    tokens_file=open(dump_folder+tokens_file_name,"r",encoding=links_file_encoding)
+    tokens_file=open(dump_folder+tokens_file_name,"r",encoding=settings_file_encoding)
     tg_ph_token=tokens_file.readline().strip()
     tg_channel_token=tokens_file.readline().strip()
     tg_channel_name=tokens_file.readline().strip()
