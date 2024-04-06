@@ -78,6 +78,7 @@ def create_db():
         TIME TEXT,
         AUTHOR TEXT,
         DELETED INTEGER,
+        NOT_SPAM INTEGER,
         CONTENTS TEXT
     )
     ''')
@@ -103,8 +104,8 @@ def create_db():
     ON TAGS_LINKED(POST_ID)
     ''')
     db_cursor.execute('''
-    CREATE INDEX IF NOT EXISTS "COMMENTS_INDEX" ON "COMMENTS" (
-	"POST_ID"
+    CREATE INDEX IF NOT EXISTS COMMENTS_INDEX
+    ON COMMENTS(POST_ID)
     ''')
     db_link.commit()
 
@@ -423,8 +424,8 @@ def add_comment(comment_id:int,post_id:int,date:str,time:str,author:str,contents
     db_cursor.execute('''SELECT * FROM COMMENTS WHERE COMMENT_ID=(?)
     ''',(comment_id,))
     if db_cursor.fetchone()==None:
-        db_cursor.execute('''INSERT INTO COMMENTS (COMMENT_ID,POST_ID,DATE,TIME,AUTHOR,DELETED,CONTENTS)
-        VALUES ((?),(?),(?),(?),(?),0,(?))
+        db_cursor.execute('''INSERT INTO COMMENTS (COMMENT_ID,POST_ID,DATE,TIME,AUTHOR,DELETED,NOT_SPAM,CONTENTS)
+        VALUES ((?),(?),(?),(?),(?),0,0,(?))
         ''',(comment_id,post_id,date,time,author,contents))
         res=db_ret.inserted
         db_link.commit()
@@ -441,6 +442,15 @@ def mark_deleted_comment(comment_id):
     global db_cursor
     global db_link
     db_cursor.execute('''UPDATE COMMENTS SET DELETED=1 WHERE COMMENT_ID=(?)
+    ''',(comment_id,))
+    res=db_ret.updated
+    db_link.commit()
+    return res
+
+def mark_not_spam_comment(comment_id):
+    global db_cursor
+    global db_link
+    db_cursor.execute('''UPDATE COMMENTS SET NOT_SPAM=1 WHERE COMMENT_ID=(?)
     ''',(comment_id,))
     res=db_ret.updated
     db_link.commit()
@@ -514,6 +524,7 @@ if __name__=="__main__":
     add_comment(4,100,"date4","time4","me","test")
     add_comment(4,100,"date2","time2","me2","test2")
     mark_deleted_comment(3)
+    mark_not_spam_comment(4)
     print("get_post_contents(1):",get_post_contents(1))
     print("get_post_tags(1):",get_post_tags(1))
     print("get_posts_list():",get_posts_list())
