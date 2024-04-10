@@ -538,8 +538,8 @@ def download_comments(update:bool):
     print(f"{len(posts_to_download)} posts to update...")
     posts_n=len(posts_to_download)
     for x in range(posts_n):
-        percentage=x*100//posts_n
-        left=posts_n-x
+        percentage=(x+1)*100//posts_n
+        left=posts_n-x-1
         download_comments_from_post(posts_to_download[x],posts_comments_n[x],percentage,left)
 
 if __name__=="__main__":

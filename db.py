@@ -484,6 +484,26 @@ def get_comment_contents(comment_id):
     ''',(comment_id,))
     return (db_cursor.fetchone()['CONTENTS'])
 
+def get_spam_comments(age:int):
+    global db_cursor
+    db_cursor.execute('''
+        SELECT
+            COMMENT_ID,
+            COMMENTS.POST_ID,
+            COMMENTS.DATE AS C_DATE, 
+            POSTS.DATE AS P_DATE,
+            (JULIANDAY(COMMENTS.DATE)-JULIANDAY(POSTS.DATE)) AS DIFF,
+            POSTS.TITLE,
+            COMMENTS.CONTENTS 
+        FROM COMMENTS LEFT JOIN POSTS ON COMMENTS.POST_ID=POSTS.POST_ID 
+        WHERE AUTHOR="Гость" AND DIFF>(?) AND NOT_SPAM=0
+        ORDER BY DIFF DESC
+    ''',(age,))
+    list=[]
+    for fetch in db_cursor.fetchall():
+        list.append(fetch)
+    return list
+
 
 
 def reset_db(db_name=""):
@@ -508,8 +528,8 @@ if __name__=="__main__":
     #connect()
     #create_db()
     reset_db("test.db")
-    add_post(1,"test","test date","test time","title",5,["Аниме","Дзякиган","Случай из жизни"],"Тестовое содержание")
-    add_post(100,"test","test_date","test time2","title2",6,["Аниме","Дзякиган","Автомобили"],"Тестовое содержание3")
+    add_post(1,"test","2001-01-01","test time","title",5,["Аниме","Дзякиган","Случай из жизни"],"Тестовое содержание")
+    add_post(100,"test","2001-01-01","test time2","title2",6,["Аниме","Дзякиган","Автомобили"],"Тестовое содержание3")
     add_pic(1,"TEST","https://example.com")
     add_pic(1,"TEST","https://example.com")
     add_pic(2,"TEST","https://example.com")
@@ -518,11 +538,11 @@ if __name__=="__main__":
     add_link(1,"TEST",2,"https://example.com")
     add_link(2,"TEST",-1,"https://example.com")
     add_link(2,"TEST",1,"https://example.com")
-    add_comment(1,100,"date1","time1","me","test")
-    add_comment(2,100,"date2","time2","me","test")
-    add_comment(3,100,"date3","time3","me","test")
-    add_comment(4,100,"date4","time4","me","test")
-    add_comment(4,100,"date2","time2","me2","test2")
+    add_comment(1,100,"2001-01-01","time1","Гость","test")
+    add_comment(2,100,"2002-01-01","time2","Гость","test")
+    add_comment(3,100,"2003-01-01","time3","Гость","test")
+    add_comment(4,100,"2003-01-01","time4","Гость","test")
+    add_comment(4,100,"2001-01-01","time2","Гость2","test2")
     mark_deleted_comment(3)
     mark_not_spam_comment(4)
     print("get_post_contents(1):",get_post_contents(1))
@@ -551,6 +571,9 @@ if __name__=="__main__":
         print("get_comments_date_time",get_comment_date_time(id))
         print("get_comment_author",get_comment_author(id))
         print("get_comment_contents",get_comment_contents(id))
-
+    res=get_spam_comments(300)
+    for row in res:
+        for col in row:
+            print(col)
 
     close()
