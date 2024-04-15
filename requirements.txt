@@ -8,3 +8,4 @@ six==1.16.0
 soupsieve==2.2.1
 urllib3==1.26.7
 win32-setctime==1.0.3
+click==8.1.7

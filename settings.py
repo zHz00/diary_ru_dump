@@ -1,6 +1,6 @@
 import init
 import enum
-version=8
+version=9
 
 uname="zHz00"
 session=""
@@ -105,7 +105,7 @@ temp_md_folder="temp_md/"
 #c:\diary\zhz_diary_obsidian\tags <- тут будут лежать файлы с тегами, и со списками постов по каждому тегу
 #C:\diary\zhz_diary_obsidian\.obsidian <- тут будут лежать настройки обсидиана
 #c:\diary\scripts <- сюда сложить питоновские файлы
-#c:\diary\dump <- тут будут метаданные постов и "сырые" посты в формате html
+#c:\diary\zhz00_dump <- тут будут метаданные постов и "сырые" посты в формате html
 
 list_file_name="Список.md"
 calendar_file_name="Календарь.md"
@@ -169,7 +169,8 @@ def change_username(uname: str,session: str) -> None:
     diary_url_comments='https://diary.ru/~'+uname+'?sort=last_comment&rfrom='
     link_marks=[uname+"/p",uname+".diary.ru/p"]
     cross_link_checking=[uname+".diary.ru/","/~"+uname+"/"]
-    saved_cookies['_session']=session
+    saved_cookies['PHPSESSID']=session
+
     if diary_url_mode==dum.one_post:
         base_folder="../"+uname+"_diary_obsidian/"
         dump_folder="../"+uname+"_dump/"

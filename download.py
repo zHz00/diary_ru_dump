@@ -89,7 +89,7 @@ def change_pre(html_txt, start=0):
         l.info("Error parsing 2...")
         return html_txt
     end=html_txt.rfind("<",beg,end_outer)#закрытие тоже пропускаем
-    prl.infoint("end:"+str(end))
+    l.infoint("end:"+str(end))
     if(end==-1):
         l.info("Error parsing 3...")
         return html_txt
@@ -121,7 +121,7 @@ def convert_date_ru_to_iso(date:str)->str:
 def get_cookies() -> None:
     cookies=RequestsCookieJar()
     for c_name,c_value in s.saved_cookies.items():
-        cookie=requests.cookies.create_cookie(domain="diary.ru",name=c_name,value=c_value)
+        cookie=requests.cookies.create_cookie(domain=s.uname+".diary.ru",name=c_name,value=c_value)
         cookies.set_cookie(cookie) 
     return cookies
 
@@ -194,11 +194,11 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
     else:
         last_page=s.start if s.start>s.stop else s.stop
     if(update):
-        s.start=last_page+20
+        s.start=last_page #было +20, но похоже сейчас этого делать не надо
         s.stop=20
     else:
         s.start=20
-        s.stop=last_page+20
+        s.stop=last_page #было +20, но похоже сейчас этого делать не надо
 
     if s.diary_url_mode!=s.dum.newest_comments:
         print("Stage 1 of 7: Downloading posts...")
@@ -229,6 +229,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
     saved_pages=0
     comments_n_changed=True
+    equal_comments=0
         
     for offset in range(s.start, s.stop, step):
         if s.diary_url_mode!=s.dum.one_post:
@@ -276,6 +277,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         #разбор данных на метаданные
 
         epigraph={}
+        print("resetting comments_n_changed to True (1)")
         #нам надо пропустить все дивы эпиграфа
         posts_divs=page.find_all("div")
         for div in posts_divs:
@@ -392,12 +394,15 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         l.info("writing posts: "+str(len(posts_ids)))
 
         for x in range(len(posts_ids)):
+            #print("resetting comments_n_changed to True (3)")
+            comments_n_changed=True
             res=db.add_post(int(posts_ids[x]),posts_links[x],posts_dates[x],posts_times_s[x],posts_titles[x],posts_comments_n[x],posts_tags[x],posts_contents[x])
             if res==db.db_ret.updated_comments_n_identical:
+                #print("identical.")
                 comments_n_changed=False
             if \
                 update==True and \
-                saved_pages>2 and \
+                saved_pages>1 and \
                 (res==db.db_ret.updated_comments_n_changed or res==db.db_ret.updated_comments_n_identical) and \
                 s.diary_url_mode==s.dum.full:
 
@@ -405,9 +410,13 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                 print("Update complete, found old posts.")
                 return
             if update==True and comments_n_changed==False and s.diary_url_mode==s.dum.newest_comments:
-                l.info("Update comments complete, found posts with equal comments counter.")
-                print("Update comments complete, found posts with equal comments counter.")
-                return            
+                equal_comments+=1
+                if equal_comments>5:#не всегда равное число комментов означает, что пора прекращать, т.к. дайари при удалении коммента может оставлять пост в списке
+                    l.info("Update comments complete, found posts with equal comments counter.")
+                    print("Update comments complete, found posts with equal comments counter.")
+                    return
+            else:
+                equal_comments=0
 
         saved_pages+=1
         l.info(f"Done saving. Waiting for {s.wait_time} sec...")
@@ -512,7 +521,6 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
         l.info(f"Deleting comment #{comment_id}...")
         print(f"Deleting comment #{comment_id}...")
         db.mark_deleted_comment(comment_id)
-        comments_n_actual-=1
     db.update_comments_n(post_id,comments_n_actual)
 
 @init.log_call

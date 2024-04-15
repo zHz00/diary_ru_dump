@@ -15,6 +15,8 @@ class db_ret(enum.Enum):
     connected=5
     updated_comments_n_changed=6
     updated_comments_n_identical=7
+    comments_n_negative=8
+    not_changed=9
 
 def connect(create=True):
     global db_link
@@ -441,8 +443,26 @@ def add_comment(comment_id:int,post_id:int,date:str,time:str,author:str,contents
 def mark_deleted_comment(comment_id):
     global db_cursor
     global db_link
+    db_cursor.execute('''SELECT DELETED FROM COMMENTS WHERE COMMENT_ID=(?)
+    ''',(comment_id,))
+    already_deleted=db_cursor.fetchone()["DELETED"]
+    if already_deleted==1:
+        return db_ret.not_changed
     db_cursor.execute('''UPDATE COMMENTS SET DELETED=1 WHERE COMMENT_ID=(?)
     ''',(comment_id,))
+    db_cursor.execute('''SELECT POST_ID FROM COMMENTS WHERE COMMENT_ID=(?)
+    ''',(comment_id,))
+    post_id=db_cursor.fetchone()["POST_ID"]
+    db_cursor.execute('''SELECT COMMENTS_N FROM POSTS WHERE POST_ID=(?)
+    ''',(post_id,))
+    comments_n=db_cursor.fetchone()["COMMENTS_N"]
+    comments_n-=1
+    if comments_n<0:
+        res=db_ret.comments_n_negative
+    else:
+        db_cursor.execute('''UPDATE POSTS SET COMMENTS_N=(?) WHERE POST_ID=(?)
+        ''',(comments_n,post_id))
+
     res=db_ret.updated
     db_link.commit()
     return res
@@ -496,7 +516,7 @@ def get_spam_comments(age:int):
             POSTS.TITLE,
             COMMENTS.CONTENTS 
         FROM COMMENTS LEFT JOIN POSTS ON COMMENTS.POST_ID=POSTS.POST_ID 
-        WHERE AUTHOR="Гость" AND DIFF>(?) AND NOT_SPAM=0
+        WHERE AUTHOR="Гость" AND DIFF>(?) AND NOT_SPAM=0 AND DELETED=0
         ORDER BY DIFF DESC
     ''',(age,))
     list=[]
@@ -543,6 +563,7 @@ if __name__=="__main__":
     add_comment(3,100,"2003-01-01","time3","Гость","test")
     add_comment(4,100,"2003-01-01","time4","Гость","test")
     add_comment(4,100,"2001-01-01","time2","Гость2","test2")
+    mark_deleted_comment(3)
     mark_deleted_comment(3)
     mark_not_spam_comment(4)
     print("get_post_contents(1):",get_post_contents(1))
