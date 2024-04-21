@@ -1,15 +1,12 @@
-import requests
+import time
+
 from download import download
 from download_pics import download_pics
 from markdown_all_diary import markdown_all_diary
 from markdown_all_diary import get_post_as_html
-from replace_urls import replace_urls
-from create_indexes import create_indexes
 import settings as s
-import init
 import tg_ph
 import tg_channel
-import time
 import db
 
 def post_to_tgph(post_id,img_list):
@@ -47,29 +44,28 @@ def post_to_tgph(post_id,img_list):
     return tg_ph.create_page(header,node_text)
     #return None
 
-    
 SEPARATOR=0
 CAPTION=1
 
 def divide_post(post_id,md_post_name):
     #DB
     header=db.get_post_title(post_id)
-    
+
     md=open(md_post_name,"r",encoding="utf-8")
     md_text=md.readlines()
     md.close()
-    
+
     md_text.insert(0,"\n\n")
     md_text.insert(0,"*"+header.strip()+"*")
-    
+
     cur_len=0#накапливаем длину абзацев для поста
     posts=[]
-    
+
     test_out=open(s.dump_folder+"posts.txt","w",encoding="utf-8")
-    
+
     unbreakable=False
     prev_line=""
-    
+
     for line in md_text:
         if line.strip().startswith("*"):
             print("found unbreakable")
@@ -101,7 +97,7 @@ def divide_post(post_id,md_post_name):
             unbreakable=False
         #if len(line.strip())>0:
         prev_line=line
-        
+
     posts.append(SEPARATOR)
     for p in posts:
         if p is SEPARATOR:
@@ -110,7 +106,7 @@ def divide_post(post_id,md_post_name):
             test_out.write("\nCAPTION\n")
         else:
             test_out.write("Post:"+p)
-        
+
     test_out.close()
     print("posts divided")
     return posts
@@ -122,18 +118,18 @@ def post_to_tgch(post_id,img_list,md_post_name):
     text=""
     token=s.tg_channel_token
     chat_id=s.tg_channel_name
-    
+
     tg_channel.init(token,chat_id)
     retries=0
-    
+
     for x in range(len(divided_post)):
         if divided_post[x] is SEPARATOR:
-            if(len(text.strip())>0):
+            if len(text.strip())>0:
                 text=text.replace("__","*")
                 while retries<s.tg_max_retries:
                     res=tg_channel.send_text(text,False)
                     res_dict=res.json()
-                    if(res_dict["ok"]!=True):
+                    if res_dict["ok"]!=True:
                         print("error sending: ["+text+"]")
                         print(res_dict)
                         retries+=1
@@ -166,7 +162,7 @@ def post_to_tgch(post_id,img_list,md_post_name):
                 while retries<s.tg_max_retries:
                     res=tg_channel.send_image(caption,s.base_folder+s.pics_folder+img_file)
                     res_dict=res.json()
-                    if(res_dict["ok"]!=True):
+                    if res_dict["ok"]!=True:
                         print("error sending: ["+text+"]")
                         retries+=1
                         print("wait for 60 sec")

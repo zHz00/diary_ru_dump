@@ -39,7 +39,7 @@ def upload_image(file,retries=5):
     print("Uploading: "+file+";remaining tries:"+str(retries))
     try:
         image_file=open(file, "rb")
-        res=requests.post(upload_prefix+"upload",files={"file":image_file});
+        res=requests.post(upload_prefix+"upload",files={"file":image_file})
         image_file.close()
         res_dict=json.loads(res.content.decode("cp437"))
         
@@ -175,13 +175,16 @@ def html_to_node(html):
     file2.close()
     print("html_to_node finished, size:"+str(len(text)))
     return text
-    
-    
-if __name__=="__main__":
+
+def test_tg_ph():
     t=open(s.dump_folder+"testpage.html","r",encoding="utf-8")
     htext=t.read()
     text=html_to_node(htext)
+    print(text)
     init("-")
     #res=create_page("TESTPAGE",text)
     res=upload_image("test.jpg")
     print(res)
+
+if __name__=="__main__":
+    test_tg_ph()

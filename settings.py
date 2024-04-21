@@ -44,10 +44,8 @@ download_comments=True
 
 def toggle_pics():
     global download_pics
-    global uname
-    global session
     download_pics=not download_pics
-    change_username(uname,session)
+    change_username()
 
 def toggle_html():
     global download_html
@@ -101,8 +99,10 @@ temp_md_folder="temp_md/"
 #c:\diary\zhz_diary_obsidian <- тут будут сами посты в формате .md
 #c:\diary\zhz_diary_obsidian\pics <- тут будут картинки
 #c:\diary\zhz_diary_obsidian\indexes <- тут будет список постов, канедарь и список тегов
-#c:\diary\zhz_diary_obsidian\indexes\days <- тут будут вспомогательные файлы для календаря; если в какой-либо день создано несколько постов, то для этого дня генерируется отдельный список, который будет размещён в этой папке
-#c:\diary\zhz_diary_obsidian\tags <- тут будут лежать файлы с тегами, и со списками постов по каждому тегу
+#c:\diary\zhz_diary_obsidian\indexes\days <- тут будут вспомогательные файлы для календаря;
+# если в какой-либо день создано несколько постов, то для этого дня генерируется отдельный список,
+# который будет размещён в этой папке
+#c:\diary\zhz_diary_obsidian\tags <- тут будут лежать файлы со списками постов по каждому тегу
 #C:\diary\zhz_diary_obsidian\.obsidian <- тут будут лежать настройки обсидиана
 #c:\diary\scripts <- сюда сложить питоновские файлы
 #c:\diary\zhz00_dump <- тут будут метаданные постов и "сырые" посты в формате html
@@ -126,11 +126,11 @@ placeholder_image_name="placeholder.png"
 db_name="posts.db"
 
 def enter_username() -> None:
-    uname=input("Please enter username:")
-    session=input("Please paste session ID, if diary has restricted access (otherwise press enter)")
+    uname_local=input("Please enter username:")
+    session_local=input("Please paste session ID, if diary has restricted access (otherwise press enter)")
     settings_file=open(settings_file_name,"w",encoding=settings_file_encoding)
-    settings_file.write(uname)
-    settings_file.write(session)
+    settings_file.write(uname_local)
+    settings_file.write(session_local)
     settings_file.close()
     load_username()
 
@@ -141,7 +141,7 @@ def load_username() -> None:
     uname=settings_file.readline().strip()
     session=settings_file.readline().strip()
     settings_file.close()
-    change_username(uname,session)
+    change_username()
     
 def load_tokens():
     global tg_ph_token
@@ -156,12 +156,11 @@ def load_tokens():
     print("Loaded channel name: "+tg_channel_name)
 
 
-def change_username(uname: str,session: str) -> None:
+def change_username() -> None:
     global diary_url
     global diary_url_comments
     global link_marks
     global cross_link_checking
-    global base_folder
     global base_folder
     global dump_folder
     global links_style
@@ -169,7 +168,7 @@ def change_username(uname: str,session: str) -> None:
     diary_url_comments='https://diary.ru/~'+uname+'?sort=last_comment&rfrom='
     link_marks=[uname+"/p",uname+".diary.ru/p"]
     cross_link_checking=[uname+".diary.ru/","/~"+uname+"/"]
-    saved_cookies['PHPSESSID']=session
+    saved_cookies['_identity_']=session
 
     if diary_url_mode==dum.one_post:
         base_folder="../"+uname+"_diary_obsidian/"
@@ -189,6 +188,3 @@ def change_username(uname: str,session: str) -> None:
     links_style=1
 
     init.create_folders()
-
- 
-        

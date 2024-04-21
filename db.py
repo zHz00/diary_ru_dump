@@ -70,7 +70,7 @@ def create_db():
         POST_ID INTEGER,
         TAG_ID INTEGER
     )
-    ''')    
+    ''')
     db_cursor.execute('''
     CREATE TABLE IF NOT EXISTS COMMENTS
     (

@@ -1,3 +1,6 @@
+import datetime
+import logging as l
+
 from download import download
 from download import download_comments
 from download_pics import download_pics
@@ -6,11 +9,6 @@ from replace_urls import replace_urls
 from create_indexes import create_indexes
 from update_times import update_times
 import settings as s
-import init
-
-import datetime
-import logging as l
-
 
 hello_message=lambda:f'''diary.ru dump utility, version {s.version}.
 (C) zHz, 2022-2024. Licenced under MIT license, see readme.txt for details.
@@ -57,15 +55,15 @@ s2=lambda: download_comments(update=False)
 s2u=lambda: download_comments(update=True)
 
 s3=lambda: markdown_all_diary(reset=True)
-s4=lambda: download_pics()
-s5=lambda: replace_urls()
-s6=lambda: create_indexes()
-s7=lambda: update_times()
+s4=download_pics
+s5=replace_urls
+s6=create_indexes
+s7=update_times
 
-change_username_lambda=lambda: s.enter_username()
-toggle_pics_lambda=lambda: s.toggle_pics()
-toggle_html_lambda=lambda: s.toggle_html()
-toggle_comments_lambda=lambda: s.toggle_comments()
+change_username_lambda=s.enter_username
+toggle_pics_lambda=s.toggle_pics
+toggle_html_lambda=s.toggle_html
+toggle_comments_lambda=s.toggle_comments
 
 scenarios={
     'A':[s1,	s2,	    s3,	s4,	s5,	s6,	s7],
@@ -108,7 +106,7 @@ while True:
     print(hello_message())
     letter=input().upper()
     if letter in scenarios:
-        l.info("Starting scenario: "+letter)
+        l.info("Starting scenario: %s",letter)
         for function in scenarios[letter]:
             function()
         if continue_execution[letter]:

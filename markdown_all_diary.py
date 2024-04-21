@@ -1,8 +1,7 @@
 import markdownify
-from os import getcwd, path
-from os import walk
-from os import listdir
-
+import time
+import tqdm
+import logging as l
 from pathlib import Path
 import re
 from bs4 import BeautifulSoup
@@ -10,11 +9,7 @@ from bs4 import BeautifulSoup
 import settings as s
 import init
 import db
-import time
 import replace_urls
-import tqdm
-
-import logging as l
 
 times_md=[]
 
@@ -68,7 +63,7 @@ def get_post_as_html(post_id: int):
         if comments_n!=0:
             comments_header.find("h2").string=f"Комментарии: {db.get_comments_downloaded(post_id)}"
         else:
-            comments_header.find("h2").string=f"(Комментариев нет)"
+            comments_header.find("h2").string="(Комментариев нет)"
         out_page.find("body").append(comments_header)
         out_page.find("body").append(BeautifulSoup("<br />", 'lxml'))
         comments_list=db.get_comments_list(post_id,deleted=False)
@@ -161,11 +156,6 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
 
 
     posts_list={}
-    pics=[]
-    links=[]
-    ids=[]
-
-
 
     #ещё раз пробегаемся по всем постам, но уже по вопросам содержимого
 
@@ -185,7 +175,6 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         times_md=[]
         add_times(times_md)#0
         add_times(times_md)#1
-        percentage=int(n/file_list_len_db*100)
         n+=1
         #сохраним содержимое
 
@@ -211,7 +200,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
             append_num+=1
             renamed_count+=1
         if renamed:
-            l.info(f"File "+out_name_file_base+".md exists! Renamed to: "+out_name_file)
+            l.info(f"File {out_name_file_base}.md exists! Renamed to: {out_name_file}")
             renamed=False
         #имя файла готово, теперь надо его сохранить в словарь
 
@@ -266,8 +255,6 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         f_out.write(out_contents)
         f_out.close()
         add_times(times_md)#12
-        pass
-    
 
 
     print(f"\nend (markdown). All={len(file_list_db)}, renamed={renamed_count}, tags={tag_count_db}")

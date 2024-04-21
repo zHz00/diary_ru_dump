@@ -36,3 +36,4 @@ def update_times() -> None:
 if __name__=="__main__":
     init.create_folders()
     update_times()
+    

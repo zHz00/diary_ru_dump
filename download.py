@@ -1,13 +1,8 @@
-#download diary
-
+import time
 from cgi import test
 import requests
-import certifi
 from bs4 import BeautifulSoup
-import time
-import re
 from requests.sessions import RequestsCookieJar
-from pathlib import Path
 import tqdm
 import typing
 import logging as l
@@ -89,7 +84,7 @@ def change_pre(html_txt, start=0):
         l.info("Error parsing 2...")
         return html_txt
     end=html_txt.rfind("<",beg,end_outer)#закрытие тоже пропускаем
-    l.infoint("end:"+str(end))
+    l.info("end:"+str(end))
     if(end==-1):
         l.info("Error parsing 3...")
         return html_txt
@@ -272,11 +267,9 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
         posts_ids=[]
         posts_dates=[]
-        posts_times=[]
 
         #разбор данных на метаданные
 
-        epigraph={}
         print("resetting comments_n_changed to True (1)")
         #нам надо пропустить все дивы эпиграфа
         posts_divs=page.find_all("div")
@@ -457,7 +450,6 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
 
         #разбор данных на метаданные
 
-        epigraph={}
         c_class_name_id="discussion"
         #нам надо пропустить все дивы эпиграфа
         posts_divs=page.find_all("div")

@@ -1,10 +1,6 @@
-import requests
-from bs4 import BeautifulSoup
-import time
 import re
 import os
 from urllib.parse import urlparse
-from pathlib import Path
 import logging as l
 import tqdm
 
@@ -65,7 +61,6 @@ def replace_urls() -> None:
         else:
             l.info("warning! empty pic name! ["+pic_url+"], post: "+post_name)
 
-    links=[]
     link={}
     not_found=[]
 
@@ -74,7 +69,6 @@ def replace_urls() -> None:
     print("Processing links...")
     for link in tqdm.tqdm(links_list_db,ascii=True):
 
-        links_list_len=len(links_list_db)
         n+=1
 
         link_is_pic=False
@@ -88,8 +82,6 @@ def replace_urls() -> None:
             post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",link['SRC_URL'],link_dest.replace(" ","%20"))        
         else:
             #обрабатываем перекрёстные ссылки
-            if link["SRC_POST_FNAME"]=="Советы по Pixel Dungeon":
-                post_name=post_name
 
             if link['SRC_DEST_POST_ID']!=-1 and link['DEST_POST_FNAME'] is not None:
                 l.info(f"Replacing {link['SRC_URL']} to {link['DEST_POST_FNAME']}")

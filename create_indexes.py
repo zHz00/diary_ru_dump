@@ -1,17 +1,15 @@
 import time
 import datetime
 import calendar
-import os
 import typing
 import re
+import tqdm
 
 import settings as s
 import init
 import db
-import tqdm
 
-
-days_with_no_posts=0   
+days_with_no_posts=0
 days_with_one_post=0
 days_with_many_posts=0
 
@@ -61,12 +59,10 @@ def generate_post_list_db(post_list: typing.List[int]) -> str:
 
     return bare_filename
 
-def generate_year_db(year: int) -> str:
+def generate_year_db(year: int,first_day,last_day) -> str:
     global days_with_no_posts
     global days_with_one_post
     global days_with_many_posts
-    global first_day
-    global last_day
     text=""
     text+=f"## {year}\n"
     #for h_col in range(months_cols*days_in_week_markup-1):
@@ -81,13 +77,13 @@ def generate_year_db(year: int) -> str:
         week_in_row=week%weeks_in_month
         if week_in_row==0:#выводим месяц
             for weekday_col in range(months_cols*days_in_week_markup-1):
-                if(weekday_col%days_in_week_markup==0):
+                if weekday_col%days_in_week_markup==0:
                     text+="| **"+roman_month[get_month(week,weekday_col)]+"** "
                 else:
                     text+="| "
             text+="|\n"
             if week==0:#после первого списка месяцев надо сделать отсечку заголовка
-                for h_col in range(months_cols*days_in_week_markup-1):
+                for _ in range(months_cols*days_in_week_markup-1):
                     text+="| ---"
                 text+="|\n"
 
@@ -125,9 +121,6 @@ def create_indexes() -> None:
     print("Stage 6 of 7: Creating indexes...")
     print("Creating full list...")
 
-    global first_day
-    global last_day
-
     db.connect()
     # I. Полный список постов
 
@@ -138,7 +131,7 @@ def create_indexes() -> None:
     for post_id in tqdm.tqdm(post_list_db,ascii=True):
         post_file_name=db.get_post_fname(post_id)
         post_title=db.get_post_title(post_id)
-        (post_date,post_time)=db.get_post_date_time(post_id)
+        (post_date,_)=db.get_post_date_time(post_id)
         date_timestamp=time.mktime(datetime.datetime.strptime(post_date,"%Y-%m-%d").timetuple())
         date_formatted=datetime.datetime.fromtimestamp(date_timestamp).strftime("%Y&#8209;%m&#8209;%d")
         post_index.write(f"| {date_formatted} | [[{post_file_name}\|{post_title}]] |\n")
@@ -147,16 +140,16 @@ def create_indexes() -> None:
     # II. Календарь
 
     #DB
-    (first_date,first_time)=db.get_post_date_time(post_list_db[0])
-    (last_date,last_time)=db.get_post_date_time(post_list_db[-1])
+    (first_date,_)=db.get_post_date_time(post_list_db[0])
+    (last_date,_)=db.get_post_date_time(post_list_db[-1])
     year_start_db=datetime.datetime.fromisoformat(first_date).year
-    year_end_db=datetime.datetime.fromisoformat(last_date).year 
+    year_end_db=datetime.datetime.fromisoformat(last_date).year
     first_day=datetime.datetime.fromisoformat(first_date)
     last_day=datetime.datetime.fromisoformat(last_date)
     calendar_text=""
     print("Creating calendar...")
     for year in tqdm.tqdm(range(year_start_db,year_end_db+1),ascii=True):
-        calendar_text+=generate_year_db(year)
+        calendar_text+=generate_year_db(year,first_day,last_day)
 
     post_calendar=open(s.base_folder+s.indexes_folder+s.calendar_file_name,"w",encoding=s.post_encoding,newline="\n")
     post_calendar.write(calendar_text)
@@ -185,7 +178,7 @@ def create_indexes() -> None:
         tag_file.write("#Теги\n\n")
         tag_file.write("| Дата | Заголовок |\n| --- | --- |\n")
         for post_id in post_list:
-            (post_date,post_time)=db.get_post_date_time(post_id)
+            (post_date,_)=db.get_post_date_time(post_id)
             post_fname=db.get_post_fname(post_id)
             post_title=db.get_post_title(post_id)
             date_formatted=datetime.datetime.fromisoformat(post_date).strftime("%Y&#8209;%m&#8209;%d")

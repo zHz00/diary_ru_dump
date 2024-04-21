@@ -1,8 +1,9 @@
+import time
+
+import requests
 from bs4 import BeautifulSoup
 import markdownify
 import click
-import requests
-import time
 
 import settings as s
 import db
@@ -69,10 +70,10 @@ def show_state(text:str,not_spam:int,for_del:int):
 def cls():
     print('\n' * 80)
 
-def show_comment_meta(comment_row,idx:int,max:int,not_spam:int,for_del:int)->None:
+def show_comment_meta(comment_row,idx:int,comments_n:int)->None:
     print("===========================COMMENT FOR REVIEW==============================")
 
-    print(f"({idx}/{max})")
+    print(f"({idx}/{comments_n})")
     print(f"Post title: {comment_row['TITLE']}")
     print(f"Post date: {comment_row['P_DATE']}")
     print(f"Post ID: {comment_row['POST_ID']}")
@@ -90,11 +91,11 @@ def show_comment_meta(comment_row,idx:int,max:int,not_spam:int,for_del:int)->Non
 
 def detect_spam()->None:
     idx=0
-    def next():
+    def next_c():
         nonlocal idx
         if idx<total-1:
             idx+=1
-    def prev():
+    def prev_c():
         nonlocal idx
         if idx>0:
             idx-=1
@@ -102,20 +103,20 @@ def detect_spam()->None:
         nonlocal comments_not_spam,comments_for_del
         comments_not_spam[idx]=(1 if comments_not_spam[idx]==0 else 0)
         comments_for_del[idx]=0
-        next()
+        next_c()
     def for_del():
         nonlocal comments_not_spam,comments_for_del
         comments_for_del[idx]=(1 if comments_for_del[idx]==0 else 0)
         comments_not_spam[idx]=0
-        next()
+        next_c()
     def esc():
         quit(0)
     def go():
         not_spam_n=sum(comments_not_spam)
         for_del_n=sum(comments_for_del)
-        print(f"\n{not_spam_n} comments will be marked as natural (not spam). Proceed?[y/n]")
+        print(f"\n{not_spam_n} comments will be marked as natural (not spam). Proceed?[y/n](Enter=y)")
         answer=input()
-        if(answer=='y' or answer=='Y'):
+        if(answer=='y' or answer=='Y' or answer==''):
             processed=0
             for idx,comment in enumerate(comments_list):
                 if comments_not_spam[idx]==1:
@@ -129,9 +130,9 @@ def detect_spam()->None:
                         print(f"({processed+1}/{not_spam_n})Comment {c_id} from post {post_id} FAILD to be marked as not spam.")
                     processed+=1
 
-        print(f"\n{for_del_n} comments will be deleted from diary on the internet. Proceed?[y/n]")
+        print(f"\n{for_del_n} comments will be deleted from diary on the internet. Proceed?[y/n](Enter=y)")
         answer=input()
-        if(answer=='y' or answer=='Y'):
+        if(answer=='y' or answer=='Y' or answer==''):
             processed=0
             for idx,comment in enumerate(comments_list):
                 if comments_for_del[idx]==1:
@@ -164,13 +165,13 @@ def detect_spam()->None:
         quit(0)
 
     actions=dict()
-    actions[']']=next
-    actions['[']=prev
+    actions[']']=next_c
+    actions['[']=prev_c
     actions['d']=for_del
     actions['x']=not_spam
     actions['q']=esc
     actions['\r']=go
-    comments_list=db.get_spam_comments(600)#комментарии старши 600 дней
+    comments_list=db.get_spam_comments(365)#комментарии старши 600 дней
     total=len(comments_list)
     if total==0:
         print("No spam found! Quitting...")
@@ -185,7 +186,7 @@ def detect_spam()->None:
         cls()
         if key=='d' or key=='x':
             show_state("===PREV",comments_not_spam[idx-1],comments_for_del[idx-1])
-        show_comment_meta(comments_list[idx],idx+1,total,comments_not_spam[idx],comments_for_del[idx])
+        show_comment_meta(comments_list[idx],idx+1,total)
         show_state("CURRENT",comments_not_spam[idx],comments_for_del[idx])
         show_hint()
         key=click.getchar()
@@ -199,6 +200,9 @@ if __name__=="__main__":
     s.load_username()
     if check_session()==False:
         quit(1)
+    s.wait_time=10
+    download.download(update=True,auto_find=True)
+    download.download_comments(update=True)
     detect_spam()
     #delete_comment(758183957,221973878)
 

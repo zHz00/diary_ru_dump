@@ -1,13 +1,11 @@
-import requests
-from bs4 import BeautifulSoup
 import time
-import re
 import os
 from urllib.parse import urlparse
 from pathlib import Path
 import logging as l
 import enum
 from PIL import Image
+import requests
 
 import settings as s
 import init
@@ -56,7 +54,7 @@ def check_image(file:str) -> cir:
         img = Image.open(file) # open the image file
         img.verify() # verify that it is, in fact an image
         img.close()
-    except (IOError, SyntaxError) as e:
+    except (IOError, SyntaxError) as _:
         return cir.corrupted
     return cir.ok
 
