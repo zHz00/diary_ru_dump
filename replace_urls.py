@@ -8,9 +8,14 @@ import settings as s
 import download_pics
 import init
 import db
+from create_indexes import convert_tag_to_safe
 
 def post_replace(file_name: str,str_from: str,str_to: str) -> None:
-    post_r=open(file_name,"r",encoding=s.post_encoding)
+    try:
+        post_r=open(file_name,"r",encoding=s.post_encoding)
+    except:
+        l.info("WARNING!: Replacing %s to %s in %s. File not found.",str_from,str_to,file_name)
+        return
     post_contents=post_r.read()
     post_r.close()
     post_contents=post_contents.replace(str_from,str_to)
@@ -83,7 +88,10 @@ def replace_urls() -> None:
         else:
             #обрабатываем перекрёстные ссылки
 
+            link_processed_flag=False
+
             if link['SRC_DEST_POST_ID']!=-1 and link['DEST_POST_FNAME'] is not None:
+                link_processed_flag=True
                 l.info(f"Replacing {link['SRC_URL']} to {link['DEST_POST_FNAME']}")
                 res=urlparse(link['SRC_URL'])
                 if res.fragment.isdigit():
@@ -99,7 +107,24 @@ def replace_urls() -> None:
                 else:
                     post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",'('+link['SRC_URL']+')','('+(link['DEST_POST_FNAME'].replace(" ","%20"))+')')
 
-            if link['SRC_DEST_POST_ID']!=-1 and link['DEST_POST_FNAME'] is None:#если -1, то там обычный урл без номера, конечно он не будет найден
+            if link['SRC_DEST_POST_ID']==-1 and link['DEST_POST_FNAME'] is None:#если -1, то там обычный урл без номера, конечно он не будет найден
+                tag_substr=".diary.ru/?tag="
+                start_idx=link['SRC_URL'].find(tag_substr)
+                if start_idx!=-1:
+                    link_processed_flag=True
+                    start_idx+=len(tag_substr)
+                    tag_id=int(re.search("(\\d+)",link['SRC_URL'][start_idx:]).group(0))
+                    tag_str=db.get_tag_name_by_diary_id(tag_id)
+                    dest_tag_fname=s.tags_folder+convert_tag_to_safe(tag_str)+".md"
+                    l.info(f"Replacing {link['SRC_URL']} to tag {dest_tag_fname}")
+                    post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",'('+link['SRC_URL']+')','('+(dest_tag_fname.replace(" ","%20"))+')')
+                tag_substr=".diary.ru/?tags="
+                start_idx=link['SRC_URL'].find(tag_substr)
+                if start_idx!=-1:
+                    l.info(f"Replacing {link['SRC_URL']} to tags list")
+                    post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",'('+link['SRC_URL']+')','('+(s.indexes_folder+s.tags_file_name)+')')
+
+            if link_processed_flag==False:
                 warning="WARNING! Destination post not found: "+str(link['SRC_DEST_POST_ID'])+ "; url: "+link['SRC_URL']
                 l.info(warning)
                 not_found.append(warning)

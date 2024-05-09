@@ -1,8 +1,9 @@
-import settings as s
 import os
 import shutil
 from pathlib import Path
 import logging as l
+
+import settings as s
 
 def create_folders() -> None:
     os.makedirs(s.base_folder+s.pics_folder,exist_ok=True)

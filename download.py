@@ -1,5 +1,4 @@
 import time
-from cgi import test
 import requests
 from bs4 import BeautifulSoup
 from requests.sessions import RequestsCookieJar
@@ -193,7 +192,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         s.stop=20
     else:
         s.start=20
-        s.stop=last_page #было +20, но похоже сейчас этого делать не надо
+        s.stop=last_page+20
 
     if s.diary_url_mode!=s.dum.newest_comments:
         print("Stage 1 of 7: Downloading posts...")
@@ -223,6 +222,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         step=1
 
     saved_pages=0
+    posts_counter=0
     comments_n_changed=True
     equal_comments=0
         
@@ -239,10 +239,20 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
             print("Page url="+page_url)
         if s.diary_url_mode==s.dum.from_file:
             page_url+=".html"
+
         l.info("Downloading "+page_url+"...")
         print("Downloading "+page_url+"...")
         if s.diary_url_mode!=s.dum.from_file:
-            page = requests.get(page_url,cookies=get_cookies())
+            tries=0
+            while tries<5:
+                try:
+                    page = requests.get(page_url,cookies=get_cookies())
+                except:
+                    tries+=1
+                    l.info("failed. tries="+str(tries))
+                    print("failed. tries="+str(tries))
+                    continue
+                break
 
             if s.download_html==True:
                 htmlfile_name=s.dump_folder+f"sheet{offset}.html"
@@ -264,13 +274,14 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         posts_contents=[]
         posts_comments_n=[]
         posts_tags=[]
+        posts_tags_ids=[]
 
         posts_ids=[]
         posts_dates=[]
 
         #разбор данных на метаданные
 
-        print("resetting comments_n_changed to True (1)")
+        #print("resetting comments_n_changed to True (1)")
         #нам надо пропустить все дивы эпиграфа
         posts_divs=page.find_all("div")
         for div in posts_divs:
@@ -323,9 +334,10 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                     if id_end==-1:
                         id_end=div.span.a["href"].rfind(".")#без заголовка, поэтому нижнего подчёркивания нет
                     posts_ids.append(div.span.a["href"][id_begin:id_end])
-                    percentage=int(len(posts_ids)/(s.stop-s.start)*step*100)
-                    l.info(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
-                    print(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
+                    posts_counter+=1
+                    percentage=int(posts_counter/abs(s.stop-s.start)*100)
+                    l.info(f"[{percentage}%]{posts_dates[-1]}, ID: {posts_ids[-1]}, {posts_titles[-1]}")
+                    print(f"[{percentage}%]{posts_dates[-1]}, ID: {posts_ids[-1]}, {posts_titles[-1]}")
                 if class_name == "post-links":#новый дизайн
                     posts_links.append(convert_to_old_style(div.div.a["href"]))
                     id_begin=div.div.a["href"].lower().find(s.link_marks[s.links_style].lower())+len(s.link_marks[s.links_style])
@@ -333,9 +345,10 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                     if id_end==-1:
                         id_end=div.a["href"].find(".",id_begin)#без заголовка, поэтому нижнего подчёркивания нет
                     posts_ids.append(div.div.a["href"][id_begin:id_end])
-                    percentage=int(len(posts_ids)/abs(s.stop-s.start)*100)
-                    l.info(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
-                    print(f"[{percentage}%]Got post. ID: {posts_ids[-1]}, title: {posts_titles[-1]}")
+                    posts_counter+=1
+                    percentage=int(posts_counter/abs(s.stop-s.start)*100)
+                    l.info(f"[{percentage}%]{posts_dates[-1]}, ID: {posts_ids[-1]}, {posts_titles[-1]}")
+                    print(f"[{percentage}%]{posts_dates[-1]}, ID: {posts_ids[-1]}, {posts_titles[-1]}")
                 test_name="postInner"
                 if class_name==test_name:
                     #if test_epigraph(epigraph,test_name)==False:
@@ -349,6 +362,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                     #    continue
                     tags=[]
                     post_tags=[]
+                    post_tags_ids=[]
                     posts_ps=div.find_all("p")
                     for p in posts_ps:# тег <p>
                         if p.has_attr("class"):
@@ -356,9 +370,16 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                                 tags=p.find_all("a")
                                 for tag in tags:
                                     post_tags.append(tag.contents[0])
+                                    tag_link=tag["href"]
+                                    start_idx=tag["href"].find("=")+1
+                                    end_idx=tag["href"].rfind("=")-2
+                                    tag_id=tag_link[start_idx:end_idx]
+                                    post_tags_ids.append(int(tag_id))
                     if len(post_tags)==0:#бывают посты без тегов. чтобы их отловить, мы ищем блок с тегами ТОЛЬКО внутри текущего дива. если его нет, ставим специальный тег, что тегов нет
                         post_tags.append("None")
+                        post_tags_ids.append(0)
                     posts_tags.append(post_tags)
+                    posts_tags_ids.append(post_tags_ids)
                 comments_n=0
                 if class_name=="right" or class_name=="postLinksBackg":#как ни странно, это счётчик комментариев! для нового и старого дизайна соответственно
                     spans=div.find_all("span")
@@ -389,7 +410,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         for x in range(len(posts_ids)):
             #print("resetting comments_n_changed to True (3)")
             comments_n_changed=True
-            res=db.add_post(int(posts_ids[x]),posts_links[x],posts_dates[x],posts_times_s[x],posts_titles[x],posts_comments_n[x],posts_tags[x],posts_contents[x])
+            res=db.add_post(int(posts_ids[x]),posts_links[x],posts_dates[x],posts_times_s[x],posts_titles[x],posts_comments_n[x],zip(posts_tags[x],posts_tags_ids[x]),posts_contents[x])
             if res==db.db_ret.updated_comments_n_identical:
                 #print("identical.")
                 comments_n_changed=False

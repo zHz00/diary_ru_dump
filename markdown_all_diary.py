@@ -10,6 +10,7 @@ import settings as s
 import init
 import db
 import replace_urls
+from create_indexes import convert_tag_to_safe
 
 times_md=[]
 
@@ -146,7 +147,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
     #DB
     tags_db=db.get_tags_list()
     for tag in tqdm.tqdm(tags_db,ascii=True):
-        tag_name=s.base_folder+s.tags_folder+re.sub(r'[\\/*?:"<>|]',"",tag.strip())+".md"
+        tag_name=s.base_folder+s.tags_folder+convert_tag_to_safe(tag)+".md"
         test_path=Path(tag_name)
         if not test_path.is_file():
             tag_file=open(tag_name,"w",encoding=s.post_encoding)
@@ -237,7 +238,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
                     link_is_pic=False
             if link_is_cross_link==False and link_is_pic==False:
                 continue
-            db.add_link(post_id,out_name_file,replace_urls.strip_post_id(link['href']),link['href'])
+            db.add_link(post_id,out_name_file,int(replace_urls.strip_post_id(link['href'])),link['href'])
         add_times(times_md)#10
         #линуксовые концы строк т.к. обсидиан всё равно их заменит
         f_out=open(out_name,"w",encoding=s.post_encoding,errors="ignore",newline='\n')

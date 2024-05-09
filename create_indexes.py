@@ -115,6 +115,9 @@ def generate_year_db(year: int,first_day,last_day) -> str:
 
     return text
 
+def convert_tag_to_safe(tag:str)->str:
+    return re.sub(r'[\\/*?:"<>|]',"",tag.strip())
+
 
 @init.log_call
 def create_indexes() -> None:
@@ -169,7 +172,7 @@ def create_indexes() -> None:
     for tag in tqdm.tqdm(tags_list,ascii=True):
         #print("[DB]Processing tag: "+tag)
         post_list=db.get_posts_list_at_tag(tag)
-        tag_safe_name=re.sub(r'[\\/*?:"<>|]',"",tag.strip())
+        tag_safe_name=convert_tag_to_safe(tag)
         common_tag_list_file.write(f"| [[{tag_safe_name}\|{tag}]] | {len(post_list)} |\n")
 
         tag_file_name=s.base_folder+s.tags_folder+tag_safe_name+".md"

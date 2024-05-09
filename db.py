@@ -2,6 +2,7 @@ import sqlite3 as sl
 import settings as s
 import os
 import enum
+import re
 
 db_link=None
 db_cursor=None
@@ -49,6 +50,7 @@ def create_db():
     CREATE TABLE IF NOT EXISTS TAGS
     (
         TAG_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        TAG_DIARY_ID INTEGER,
         TAG TEXT
     )
     ''')
@@ -141,11 +143,11 @@ def add_post(post_id,url,date,time,title,comments_n,tags,contents):
     #теперь пробивает таблицу тегов
     db_cursor.execute('''
     DELETE FROM TAGS_LINKED WHERE POST_ID=(?)
-    ''',(post_id,))
+    ''',(post_id,))#чтобы не было дублей
     for tag in tags:
         db_cursor.execute('''
         SELECT * FROM TAGS WHERE TAG=(?)
-        ''',(tag,))
+        ''',(tag[0],))
         tag_db=db_cursor.fetchall()
         if len(tag_db)>0:
             db_cursor.execute('''
@@ -153,11 +155,11 @@ def add_post(post_id,url,date,time,title,comments_n,tags,contents):
             ''',(post_id,tag_db[0]['TAG_ID']))
         else:
             db_cursor.execute('''
-            INSERT INTO TAGS (TAG) VALUES (?)
-            ''',(tag,))
+            INSERT INTO TAGS (TAG,TAG_DIARY_ID) VALUES (?,?)
+            ''',(tag[0],tag[1]))
             db_cursor.execute('''
             SELECT * FROM TAGS WHERE TAG=(?)
-            ''',(tag,))
+            ''',(tag[0],))
             tag_db=db_cursor.fetchall()
             db_cursor.execute('''
             INSERT INTO TAGS_LINKED (POST_ID,TAG_ID) VALUES (?,?)
@@ -187,23 +189,37 @@ def add_pic(post_id,post_fname,url):
 
 def add_link(post_id,post_fname,dest_post_id,url):
     global db_cursor
-    res=db_ret.unknown
     db_cursor.execute('''
-    SELECT * FROM LINKS WHERE POST_ID=(?) AND URL=(?)
-    ''',(post_id,url))#проверяем только ИД поста, а имя файла не проверяем. рано или поздно это может привести к проблемам!
+    SELECT * FROM LINKS WHERE POST_ID=(?)
+    ''',(post_id,))#проверяем только ИД поста, а имя файла не проверяем. рано или поздно это может привести к проблемам!
     #UPD. И уже привело. Теперь при наличии строки я обновляю имя файла, потому что оно, вообще-то, могло измениться!
-    if len(db_cursor.fetchall())==0:
-        db_cursor.execute('''
-        INSERT INTO LINKS (POST_ID,POST_FNAME,DEST_POST_ID,URL) VALUES (?,?,?,?)
-        ''',(post_id,post_fname,dest_post_id,url))
-        res=db_ret.inserted
-    else:
-        db_cursor.execute('''
-        UPDATE LINKS SET POST_FNAME=(?) 
-        WHERE POST_ID=(?) AND URL=(?)
-        ''',(post_fname,post_id,url))
-        res=db_ret.already_exists
+    #UPD2. оказалось что недостаточно текущих мер (проверки ИД и урла), т.к. при изменении имени поста изменяется и его урл!
+    fetch=db_cursor.fetchall()
+    find_pattern="diary.ru/"
+    for link in fetch:
+        dest_post_id_match=re.search("\\/p(\\d+)",link['URL'][link['URL'].find(find_pattern):])
+        if dest_post_id_match is not None:
+            dest_post_id_db_str=dest_post_id_match.group(0)[2:]
+            if dest_post_id_db_str.isdecimal():
+                dest_post_id_db_int=int(dest_post_id_db_str)
+            else:
+                dest_post_id_db_int=-2
+        else:
+            dest_post_id_db_int=-2
+        if dest_post_id==dest_post_id_db_int or url==link['URL']:#уже есть ссылка, надо обновить данные
+            db_cursor.execute('''
+            UPDATE LINKS SET POST_FNAME=(?), URL=(?)
+            WHERE POST_ID=(?) AND URL=(?)
+            ''',(post_fname,url,post_id,link['URL']))
+            db_link.commit()
+            return db_ret.already_exists
+
+    db_cursor.execute('''
+    INSERT INTO LINKS (POST_ID,POST_FNAME,DEST_POST_ID,URL) VALUES (?,?,?,?)
+    ''',(post_id,post_fname,dest_post_id,url))
+    
     db_link.commit()
+    return db_ret.inserted
 
 
 def get_post_contents(post_id:int) -> str:
@@ -250,8 +266,12 @@ def get_post_fname(post_id:int) -> str:
     db_cursor.execute('''SELECT DISTINCT LINKS.POST_FNAME 
     FROM POSTS LEFT JOIN LINKS 
     ON POSTS.POST_ID=LINKS.POST_ID 
-    WHERE POSTS.POST_ID=(?)
-    ''',(post_id,))
+    WHERE POSTS.POST_ID=(?)  AND LINKS.DEST_POST_ID=(?)
+    ''',(post_id,post_id))#дублирование нужно чтобы найти именно ссылку поста самого на себя. иначе можно найти устаревшие ссылки оставшиеся после редактирования постов
+    #тут долгая история, срабатывает на посте "Список моих статией" после того, как я отредактировал там список тегов
+    #из за этого в базу попали новые строчки со ссылками, а старые не удалилилсь (не придумал, как алгоритмически выяснить необходимость их удаления)
+    #ну и вот, если не сравнивать LINKS.DEST_POST_ID, то выскочит и старое имя поста и новое. первым в списке будет старое, из-за чего при генерациии индексов будут
+    #битые ссылки
     return db_cursor.fetchone()['POST_FNAME']
 
 def get_posts_list():
@@ -524,6 +544,16 @@ def get_spam_comments(age:int):
         list.append(fetch)
     return list
 
+def get_tag_name_by_diary_id(diary_tag_id:int)->str:
+    global db_cursor
+    db_cursor.execute('''
+        SELECT TAG FROM TAGS
+        WHERE TAG_DIARY_ID=(?)
+    ''',(diary_tag_id,))
+    fetch=db_cursor.fetchone()
+    if fetch is None:
+        return ""
+    return fetch['TAG']
 
 
 def reset_db(db_name=""):
@@ -548,8 +578,8 @@ if __name__=="__main__":
     #connect()
     #create_db()
     reset_db("test.db")
-    add_post(1,"test","2001-01-01","test time","title",5,["Аниме","Дзякиган","Случай из жизни"],"Тестовое содержание")
-    add_post(100,"test","2001-01-01","test time2","title2",6,["Аниме","Дзякиган","Автомобили"],"Тестовое содержание3")
+    add_post(1,"test","2001-01-01","test time","title",5,[("Аниме",1),("Дзякиган",2),("Случай из жизни",3)],"Тестовое содержание")
+    add_post(100,"test","2001-01-01","test time2","title2",6,[("Аниме",1),("Дзякиган",2),("Автомобили",4)],"Тестовое содержание3")
     add_pic(1,"TEST","https://example.com")
     add_pic(1,"TEST","https://example.com")
     add_pic(2,"TEST","https://example.com")
@@ -558,6 +588,10 @@ if __name__=="__main__":
     add_link(1,"TEST",2,"https://example.com")
     add_link(2,"TEST",-1,"https://example.com")
     add_link(2,"TEST",1,"https://example.com")
+    add_link(222002696,"TEST",222002696,"https://zhz00.diary.ru/p222002696_jeto-ne-slyozy-jeto-prosto-dozhd.htm")
+    add_link(222002696,"TEST2",222002696,"https://zhz00.diary.ru/p222002696_dsfghertdyg.htm")
+    add_link(218943387,"Список моих статей (обновлено 20221028)",218943387,"https://diary.ru/~zHz00/p218943387_spisok-moih-statej-obnovleno-2022-10-28.htm")
+    add_link(218943387,"Список моих статей (обновлено 20240509)",218943387,"https://diary.ru/~zHz00/p218943387_spisok-moih-statej-obnovleno-2024-05-09.htm")
     add_comment(1,100,"2001-01-01","time1","Гость","test")
     add_comment(2,100,"2002-01-01","time2","Гость","test")
     add_comment(3,100,"2003-01-01","time3","Гость","test")
@@ -566,6 +600,8 @@ if __name__=="__main__":
     mark_deleted_comment(3)
     mark_deleted_comment(3)
     mark_not_spam_comment(4)
+    print("get_tag_name_by_diary_id(2):",get_tag_name_by_diary_id(2))
+    print("get_tag_name_by_diary_id(100):[",get_tag_name_by_diary_id(100),"]")
     print("get_post_contents(1):",get_post_contents(1))
     print("get_post_tags(1):",get_post_tags(1))
     print("get_posts_list():",get_posts_list())
