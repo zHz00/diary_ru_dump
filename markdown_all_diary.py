@@ -14,6 +14,30 @@ from create_indexes import convert_tag_to_safe
 
 times_md=[]
 
+def remove_backslashes_in_code(contents:str,post_id:int)->str:
+    code_markers=[]
+    pair=[]
+    for i,m in enumerate(re.finditer("```",contents)):
+        if i%2==0:
+            pair=[m.start(0)]
+        else:
+            pair.append(m.start(0))
+            code_markers.append(pair)
+    if len(pair)==1:
+        l.info("Warning! odd code markers count, post id %d",post_id)
+    #print(code_markers)
+    if len(code_markers)==0:
+        return contents
+    contents_new=contents[0:code_markers[0][0]]
+    for i in range(len(code_markers)):
+        if i!=0:
+            contents_new+=contents[code_markers[i-1][1]:code_markers[i][0]]
+        contents_new+=contents[code_markers[i][0]:code_markers[i][1]].replace("\_","_").replace("\*","*")
+    contents_new+=contents[code_markers[-1][1]:]
+    #print(contents_new)
+    return contents_new
+    
+
 def get_post_as_html(post_id: int):
     global times_md
     fish="<html><title></title><body></body></html>"
@@ -172,6 +196,8 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         folder=s.base_folder
    
     for post_id in tqdm.tqdm(file_list_db,ascii=True):
+        #if post_id!=221557637:
+        #    continue
         add_times(times_loop)
         times_md=[]
         add_times(times_md)#0
@@ -242,10 +268,12 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         add_times(times_md)#10
         #линуксовые концы строк т.к. обсидиан всё равно их заменит
         f_out=open(out_name,"w",encoding=s.post_encoding,errors="ignore",newline='\n')
+        contents=contents.replace("&lt;br&gt;","\n")
         if s.diary_url_mode==s.dum.one_post:
             out_contents=markdownify.markdownify(contents,strong_em_symbol=markdownify.UNDERSCORE,escape_asterisks=True).strip()
         else:
             out_contents=markdownify.markdownify(contents).strip()
+        out_contents=remove_backslashes_in_code(out_contents,post_id)
             #out_contents=normalize_to_prev_ver(out_contents)
             #поскольку я собираюсь докачивать комментарии, все файлы всё равно будут изменены и репозиторий с хранилищем обсидиана будет залит заново
             #так что более нет необходимости хранить совместимость
