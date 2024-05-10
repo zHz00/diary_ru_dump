@@ -122,7 +122,7 @@ def replace_urls() -> None:
                 start_idx=link['SRC_URL'].find(tag_substr)
                 if start_idx!=-1:
                     l.info(f"Replacing {link['SRC_URL']} to tags list")
-                    post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",'('+link['SRC_URL']+')','('+(s.indexes_folder+s.tags_file_name)+')')
+                    post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",'('+link['SRC_URL']+')','('+(s.indexes_folder+s.tags_file_name+s.tags_ab_postfix)+')')
 
             if link_processed_flag==False:
                 warning="WARNING! Destination post not found: "+str(link['SRC_DEST_POST_ID'])+ "; url: "+link['SRC_URL']
