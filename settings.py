@@ -1,6 +1,6 @@
 import init
 import enum
-version=9
+version=10
 
 uname="zHz00"
 session=""
@@ -91,6 +91,7 @@ indexes_folder="indexes/"
 days_folder="days/"
 tags_folder="tags/"
 obsidian_settings_folder=".obsidian/"
+obsidian_bookmarks_file="bookmarks.json"
 obsidian_default_settings_folder="default_obsidian_config/"
 test_folder="tests/data/"
 temp_md_folder="temp_md/"
@@ -107,9 +108,13 @@ temp_md_folder="temp_md/"
 #c:\diary\scripts <- сюда сложить питоновские файлы
 #c:\diary\zhz00_dump <- тут будут метаданные постов и "сырые" посты в формате html
 
-list_file_name="Список.md"
+list_file_name="Список"
+list_direct_postfix=" (хронологически).md"
+list_reversed_postfix=" (сначала новые).md"
 calendar_file_name="Календарь.md"
-tags_file_name="Теги.md"
+tags_file_name="Теги"
+tags_ab_postfix=" (по алфавиту).md"
+tags_n_postfix=" (по количеству).md"
 day_list_prefix="AT"
 
 post_list_encoding="utf-8"

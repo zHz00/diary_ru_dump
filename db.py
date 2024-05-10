@@ -274,13 +274,20 @@ def get_post_fname(post_id:int) -> str:
     #битые ссылки
     return db_cursor.fetchone()['POST_FNAME']
 
-def get_posts_list():
+def get_posts_list(reversed=False):
     global db_cursor
-    db_cursor.execute('''
-    SELECT POST_ID,DATE,TIME 
-    FROM POSTS 
-    ORDER BY DATE,TIME
-    ''')
+    if reversed:
+        db_cursor.execute('''
+        SELECT POST_ID,DATE,TIME 
+        FROM POSTS 
+        ORDER BY DATE DESC,TIME DESC
+        ''')
+    else:
+        db_cursor.execute('''
+        SELECT POST_ID,DATE,TIME 
+        FROM POSTS 
+        ORDER BY DATE ASC,TIME ASC
+        ''')
     fetch=db_cursor.fetchall()
     list=[]
     for id in fetch:
@@ -555,6 +562,19 @@ def get_tag_name_by_diary_id(diary_tag_id:int)->str:
         return ""
     return fetch['TAG']
 
+def get_post_by_contents(substr:str):
+    global db_cursor
+    db_cursor.execute('''
+        SELECT POST_ID
+        FROM POSTS
+        WHERE CONTENTS LIKE (?)
+    ''',('%'+substr+'%',))
+    list=[]
+    for fetch in db_cursor.fetchall():
+        list.append(fetch['POST_ID'])
+    return list
+
+
 
 def reset_db(db_name=""):
     if db_name!="":
@@ -579,12 +599,13 @@ if __name__=="__main__":
     #create_db()
     reset_db("test.db")
     add_post(1,"test","2001-01-01","test time","title",5,[("Аниме",1),("Дзякиган",2),("Случай из жизни",3)],"Тестовое содержание")
-    add_post(100,"test","2001-01-01","test time2","title2",6,[("Аниме",1),("Дзякиган",2),("Автомобили",4)],"Тестовое содержание3")
+    add_post(100,"test","2001-01-01","test time2","title2",6,[("Аниме",1),("Дзякиган",2),("Автомобили",4)],"это что такое?")
     add_pic(1,"TEST","https://example.com")
     add_pic(1,"TEST","https://example.com")
     add_pic(2,"TEST","https://example.com")
     add_pic(2,"TEST","https://example.com")
     add_link(1,"TEST",2,"https://example.com")
+    add_link(1,"TEST",1,"https://example2.com")
     add_link(1,"TEST",2,"https://example.com")
     add_link(2,"TEST",-1,"https://example.com")
     add_link(2,"TEST",1,"https://example.com")
@@ -622,6 +643,8 @@ if __name__=="__main__":
     print("get_comments_list(100)",get_comments_list(100,deleted=True))
     print("get_comments_list(100)",get_comments_list(100,deleted=False))    
     print("update_comments_n(100,5)",update_comments_n(100,5))
+    print("get_post_by_contents",get_post_by_contents("Тестовое"))
+    print("get_post_by_contents",get_post_by_contents("test3"))
     list=get_comments_list(100)
     for id in list:
         print(id)

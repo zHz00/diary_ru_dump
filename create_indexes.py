@@ -3,6 +3,8 @@ import datetime
 import calendar
 import typing
 import re
+from operator import itemgetter
+
 import tqdm
 
 import settings as s
@@ -64,7 +66,7 @@ def generate_year_db(year: int,first_day,last_day) -> str:
     global days_with_one_post
     global days_with_many_posts
     text=""
-    text+=f"## {year}\n"
+    text+=f"## {year}\n[В начало]({s.calendar_file_name}#Годы)\n\n"
     #for h_col in range(months_cols*days_in_week_markup-1):
     #    text+="| "
     #text+="|\n"
@@ -118,6 +120,18 @@ def generate_year_db(year: int,first_day,last_day) -> str:
 def convert_tag_to_safe(tag:str)->str:
     return re.sub(r'[\\/*?:"<>|]',"",tag.strip())
 
+def append_bookmark(file,name,first:bool=False)->None:
+    if not first:
+        file.write(",")
+    file.write('''    {
+      "type": "file",
+      "ctime": 1,
+      "path": "''')
+    file.write(name)
+    file.write('''"
+    }
+    ''')
+
 
 @init.log_call
 def create_indexes() -> None:
@@ -128,7 +142,21 @@ def create_indexes() -> None:
     # I. Полный список постов
 
     #DB
-    post_index=open(s.base_folder+s.indexes_folder+s.list_file_name,"w",encoding=s.post_encoding,newline="\n")
+
+    #сначала делаем в обратном порядке, т.к. прямой будет нужен при создании календаря
+    post_index=open(s.base_folder+s.indexes_folder+s.list_file_name+s.list_reversed_postfix,"w",encoding=s.post_encoding,newline="\n")
+    post_index.write("| Дата | Заголовок |\n| --- | --- |\n")
+    post_list_db=db.get_posts_list(reversed=True)
+    for post_id in tqdm.tqdm(post_list_db,ascii=True):
+        post_file_name=db.get_post_fname(post_id)
+        post_title=db.get_post_title(post_id)
+        (post_date,_)=db.get_post_date_time(post_id)
+        date_timestamp=time.mktime(datetime.datetime.strptime(post_date,"%Y-%m-%d").timetuple())
+        date_formatted=datetime.datetime.fromtimestamp(date_timestamp).strftime("%Y&#8209;%m&#8209;%d")
+        post_index.write(f"| {date_formatted} | [[{post_file_name}\|{post_title}]] |\n")
+    post_index.close()
+
+    post_index=open(s.base_folder+s.indexes_folder+s.list_file_name+s.list_direct_postfix,"w",encoding=s.post_encoding,newline="\n")
     post_index.write("| Дата | Заголовок |\n| --- | --- |\n")
     post_list_db=db.get_posts_list()
     for post_id in tqdm.tqdm(post_list_db,ascii=True):
@@ -140,6 +168,7 @@ def create_indexes() -> None:
         post_index.write(f"| {date_formatted} | [[{post_file_name}\|{post_title}]] |\n")
     post_index.close()
 
+
     # II. Календарь
 
     #DB
@@ -149,7 +178,10 @@ def create_indexes() -> None:
     year_end_db=datetime.datetime.fromisoformat(last_date).year
     first_day=datetime.datetime.fromisoformat(first_date)
     last_day=datetime.datetime.fromisoformat(last_date)
-    calendar_text=""
+    calendar_text="## Годы\n"
+    for year in range(year_start_db,year_end_db+1):
+        calendar_text+=f"[{year}]({s.calendar_file_name}#{year}) "
+    calendar_text+="\n"
     print("Creating calendar...")
     for year in tqdm.tqdm(range(year_start_db,year_end_db+1),ascii=True):
         calendar_text+=generate_year_db(year,first_day,last_day)
@@ -165,8 +197,10 @@ def create_indexes() -> None:
 
     #DB
 
+    tags_list_for_sort=[]
+
     tags_list=db.get_tags_list()
-    common_tag_list_file=open(s.base_folder+s.indexes_folder+s.tags_file_name,"w",encoding=s.post_encoding,newline="\n")
+    common_tag_list_file=open(s.base_folder+s.indexes_folder+s.tags_file_name+s.tags_ab_postfix,"w",encoding=s.post_encoding,newline="\n")
     common_tag_list_file.write("| Тег | N |\n| --- | --- |\n")
 
     for tag in tqdm.tqdm(tags_list,ascii=True):
@@ -174,6 +208,7 @@ def create_indexes() -> None:
         post_list=db.get_posts_list_at_tag(tag)
         tag_safe_name=convert_tag_to_safe(tag)
         common_tag_list_file.write(f"| [[{tag_safe_name}\|{tag}]] | {len(post_list)} |\n")
+        tags_list_for_sort.append([tag_safe_name,tag,len(post_list)])
 
         tag_file_name=s.base_folder+s.tags_folder+tag_safe_name+".md"
         tag_file=open(tag_file_name,"w",encoding=s.post_encoding,newline="\n")
@@ -191,6 +226,40 @@ def create_indexes() -> None:
     print(f"Done. Processed tags: {len(tags_list)}")
 
     common_tag_list_file.close()
+
+    tags_list_sorted=sorted(tags_list_for_sort,key=itemgetter(2),reverse=True)
+
+    common_tag_list_file=open(s.base_folder+s.indexes_folder+s.tags_file_name+s.tags_n_postfix,"w",encoding=s.post_encoding,newline="\n")
+    common_tag_list_file.write("| Тег | N |\n| --- | --- |\n")
+    for tag_safe_name,tag,n in tags_list_sorted:
+        common_tag_list_file.write(f"| [[{tag_safe_name}\|{tag}]] | {n} |\n")
+
+    common_tag_list_file.close()
+
+    bookmarks_file=open(s.base_folder+s.obsidian_settings_folder+s.obsidian_bookmarks_file,"w",encoding=s.post_encoding,newline="\n")
+    bookmarks_file.write('''{
+  "items": [''')
+    append_bookmark(bookmarks_file,s.indexes_folder+s.list_file_name+s.list_direct_postfix,first=True)
+    append_bookmark(bookmarks_file,s.indexes_folder+s.list_file_name+s.list_reversed_postfix)
+    append_bookmark(bookmarks_file,s.indexes_folder+s.tags_file_name+s.tags_ab_postfix)
+    append_bookmark(bookmarks_file,s.indexes_folder+s.tags_file_name+s.tags_n_postfix)
+    append_bookmark(bookmarks_file,s.indexes_folder+s.calendar_file_name)
+
+    articles_list=db.get_post_by_contents("ARTICLES_LIST_POST")
+    if len(articles_list)!=1:
+        l.info("Warning! found %d posts with article list. must be 1",len(articles_list))
+    else:
+        append_bookmark(bookmarks_file,db.get_post_fname(articles_list[0])+".md")
+    
+    tags_list=db.get_post_by_contents("TAGS_LIST_POST")
+    if len(tags_list)!=1:
+        l.info("Warning! found %d posts with tags list. must be 1",len(tags_list))
+    else:
+        append_bookmark(bookmarks_file,db.get_post_fname(tags_list[0])+".md")
+    bookmarks_file.write('''  ]
+}''')
+    bookmarks_file.close()
+
 
 
 if __name__=="__main__":
