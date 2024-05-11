@@ -1,5 +1,6 @@
 import time
 import os
+import enum
 from urllib.parse import urlparse
 from pathlib import Path
 import logging as l
@@ -11,19 +12,33 @@ import settings as s
 import init
 import db
 
-def write_placeholder(file:str) -> None:
+class plc_type(enum.Enum):
+    DUMMY=1
+    CENSOR=2
+
+def write_placeholder(type:plc_type,file:str) -> None:
     if not hasattr(write_placeholder,"placeholder_image"):
         placeholder_image_stream=open(s.placeholder_image_name,"rb")
         write_placeholder.placeholder_image=placeholder_image_stream.read()
         placeholder_image_stream.close()
-    out_pic=open(file,"rb")
-    contents=out_pic.read()
-    backup_pic=open(s.dump_folder+s.temp_md_folder+s.pics_folder+os.path.basename(file),"wb")
-    backup_pic.write(contents)
-    backup_pic.close()
-    out_pic.close()
+    if not hasattr(write_placeholder,"censor_image"):
+        placeholder_image_stream=open(s.censor_image_name,"rb")
+        write_placeholder.censor_image=placeholder_image_stream.read()
+        placeholder_image_stream.close()
+
+    if type==plc_type.DUMMY:
+        out_pic=open(file,"rb")
+        contents=out_pic.read()
+        backup_pic=open(s.dump_folder+s.temp_md_folder+s.pics_folder+os.path.basename(file),"wb")
+        backup_pic.write(contents)
+        backup_pic.close()
+        out_pic.close()
+    
     out_pic=open(file,"wb")
-    out_pic.write(write_placeholder.placeholder_image)
+    if type==plc_type.DUMMY:
+        out_pic.write(write_placeholder.placeholder_image)
+    if type==plc_type.CENSOR:
+        out_pic.write(write_placeholder.censor_image)
     out_pic.close()
 
 class cir(enum.Enum):
@@ -132,7 +147,7 @@ def download_pics(post_id=-1) -> None:
             warnings.append(warning)
             l.info(warning)
             pic_errors+=1
-            pic_name="!!!"+pic_name
+            pic_name=s.pics_duplicate_folder+"!!!"+pic_name
             #если у нас не две одинаковые картинки, а три или больше -- это всё равно. нам с двумя надо разобраться. я даже сюда поставлю брейкпоинт
             #тем не менее, если я использую одну и ту же картинку в постах несколько раз, а такое бывало, то это не страшно.
             #в этом случае картинка фактически одна и та же, т.е. не только имя файла, но и урл. но пусть остаются три воскл. знака как сигнал
@@ -141,6 +156,14 @@ def download_pics(post_id=-1) -> None:
 
 
         pic_full_name=s.base_folder+s.pics_folder+check_length(pic_name)
+        pic_censor_full_name=s.base_folder+s.pics_folder+s.pics_censor_folder+check_length(pic_name)
+        if(Path(pic_censor_full_name).is_file()):
+            l.info(pic_url+" censored, replacing to palceholder.")
+            pic_skipped+=1
+            write_placeholder(plc_type.CENSOR,pic_full_name)
+            placeholders+=1
+            continue
+
         if(Path(pic_full_name).is_file()):
             l.info(pic_url+" already downloaded.")
             pic_skipped+=1
@@ -151,7 +174,7 @@ def download_pics(post_id=-1) -> None:
             else:
                 if res!=cir.ok:
                     l.info("Invalid image! "+pic_full_name+"Replacing to placeholder")
-                    write_placeholder(pic_full_name)
+                    write_placeholder(plc_type.DUMMY,pic_full_name)
                     placeholders+=1
             continue
         l.info("[DB]Downloading "+pic_url+"...")
@@ -161,7 +184,7 @@ def download_pics(post_id=-1) -> None:
             try:
                 pic=requests.get(pic_url,headers=s.user_agent)
             except:
-                write_placeholder(s.base_folder+s.pics_folder+check_length(pic_name))
+                write_placeholder(plc_type.DUMMY,s.base_folder+s.pics_folder+check_length(pic_name))
                 placeholders+=1
                 warning="[DB]Error during downloading ["+pic_url+"]! Skipping..."
                 warnings.append(warning)
@@ -174,7 +197,7 @@ def download_pics(post_id=-1) -> None:
                 src_pic=open(s.test_folder+check_length(pic_name),"rb")
                 pic.content=src_pic.read()
             except:
-                write_placeholder(s.base_folder+s.pics_folder+check_length(pic_name))
+                write_placeholder(plc_type.DUMMY,s.base_folder+s.pics_folder+check_length(pic_name))
                 placeholders+=1
                 warning="[DB]Error opening ["+pic_url+"]! Skipping..."
                 warnings.append(warning)
@@ -189,7 +212,7 @@ def download_pics(post_id=-1) -> None:
         out_pic.close()
         if check_image(s.base_folder+s.pics_folder+pic_name)==False:
             l.info("Invalid image! "+s.base_folder+s.pics_folder+pic_name+"Replacing to placeholder")
-            write_placeholder(s.base_folder+s.pics_folder+pic_name)
+            write_placeholder(plc_type.DUMMY,s.base_folder+s.pics_folder+pic_name)
             placeholders+=1
         l.info(f"[DB]Done saving. Size={len(pic.content)}. Waiting for {s.wait_time} sec...")
         print(f"Done. Size={len(pic.content)}. Waiting {s.wait_time}s")

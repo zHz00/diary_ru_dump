@@ -96,8 +96,8 @@ def get_post_as_html(post_id: int):
         for idx,c_id in enumerate(comments_list):
             c_date,c_time=db.get_comment_date_time(c_id)
             c_author=db.get_comment_author(c_id)
-            c_contents=db.get_comment_contents(c_id)
-            out_page.find("body").append(BeautifulSoup("<hr /><table><tr><th>        #        </th><th>             Дата             </th><th>                    Автор                    </th><th>          ID          </th></tr><tr><td>("+str(idx+1)+"/"+str(c_len)+")</td><td>"+c_date+", "+c_time+"</td><td>"+c_author+"</td><td>c"+str(c_id)+"</td></tr></table><br />"+c_contents+" ^c"+str(c_id), 'lxml'))
+            c_contents=db.get_comment_contents(c_id).replace("</span>  </div>","</span>  </div><br>").replace("</code>","</code><br>").replace('<div align="center">   <a href=','<div align="center"><br><a href=')
+            out_page.find("body").append(BeautifulSoup("<hr /><table><tr><th>        #        </th><th>             Дата             </th><th>                    Автор                    </th><th>          ID          </th></tr><tr><td>("+str(idx+1)+"/"+str(c_len)+")</td><td>"+c_date+", "+c_time+"</td><td>"+c_author+"</td><td>c"+str(c_id)+"</td></tr></table><br />"+c_contents.strip()+" ^c"+str(c_id), 'lxml'))
 
 
     contents=str(out_page).replace("\n","").replace("\r","").replace("</br>","<br/>").replace("<br>","<br/>")
@@ -270,9 +270,9 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         f_out=open(out_name,"w",encoding=s.post_encoding,errors="ignore",newline='\n')
         contents=contents.replace("&lt;br&gt;","\n")
         if s.diary_url_mode==s.dum.one_post:
-            out_contents=markdownify.markdownify(contents,strong_em_symbol=markdownify.UNDERSCORE,escape_asterisks=True).strip()
+            out_contents=markdownify.markdownify(contents,strong_em_symbol=markdownify.UNDERSCORE,escape_asterisks=True,keep_inline_images_in=["tr","td","th","a"]).strip()
         else:
-            out_contents=markdownify.markdownify(contents).strip()
+            out_contents=markdownify.markdownify(contents,keep_inline_images_in=["tr","td","th","a"]).strip()
         out_contents=remove_backslashes_in_code(out_contents,post_id)
             #out_contents=normalize_to_prev_ver(out_contents)
             #поскольку я собираюсь докачивать комментарии, все файлы всё равно будут изменены и репозиторий с хранилищем обсидиана будет залит заново

@@ -86,6 +86,8 @@ wait_time=60 #sec
 base_folder="../zhz00_diary_obsidian/"
 #base_folder="../zhz_diary_obsidian_nopics/"
 pics_folder="pics/"
+pics_duplicate_folder="duplicate/"
+pics_censor_folder="censor/"
 dump_folder="../zhz00_dump/"
 indexes_folder="indexes/"
 days_folder="days/"
@@ -127,6 +129,7 @@ user_agent = {'User-agent': 'Mozilla/5.0'}
 settings_file_name="username.txt"
 tokens_file_name="tokens.txt"
 placeholder_image_name="placeholder.png"
+censor_image_name="censor.png"
 
 db_name="posts.db"
 

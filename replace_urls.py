@@ -62,7 +62,7 @@ def replace_urls() -> None:
 
         res=urlparse(pic_url)#проверим, что у нас нормальный урл
         if(len(res.path)>0):
-            post_replace(s.base_folder+post_name+".md",'('+pic_url+')','('+s.pics_folder+download_pics.check_length(pic_name)+')')
+            post_replace(s.base_folder+post_name+".md",'('+pic_url,'('+s.pics_folder+download_pics.check_length(pic_name))
         else:
             l.info("warning! empty pic name! ["+pic_url+"], post: "+post_name)
 
