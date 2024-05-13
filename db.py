@@ -108,10 +108,38 @@ def create_db():
     ON TAGS_LINKED(POST_ID)
     ''')
     db_cursor.execute('''
+    CREATE INDEX IF NOT EXISTS TAGS_INDEX
+    ON TAGS_LINKED(TAG_ID)
+    ''')    
+    db_cursor.execute('''
     CREATE INDEX IF NOT EXISTS COMMENTS_INDEX
     ON COMMENTS(POST_ID)
     ''')
     db_link.commit()
+    
+def check_connection():
+    global db_cursor
+    global db_link
+    if db_cursor is None:
+        return 1
+    if db_link is None:
+        return 2
+    db_cursor.execute('''SELECT count(*) as tcount FROM sqlite_master WHERE type = 'table' AND name != 'android_metadata' AND name != 'sqlite_sequence'
+    ''')
+    tables=db_cursor.fetchone()["tcount"]
+    if tables!=6:
+        print(f"tables={tables}")
+        return 3
+    db_cursor.execute('''SELECT count(*) as icount FROM sqlite_master WHERE type = 'index'
+    ''')
+    indexes=db_cursor.fetchone()["icount"]
+    if indexes!=3:
+        print(f"indexes={indexes}")
+        return 4
+    return 0
+
+
+
 
 def add_post(post_id,url,date,time,title,comments_n,tags,contents):
     global db_cursor
