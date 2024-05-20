@@ -44,7 +44,7 @@ def get_day(year: int,week: int,weekday_col: int) -> int:
         return 0
     return day_this_month
 
-def generate_post_list_db(post_list: typing.List[int]) -> str:
+def generate_post_list(post_list: typing.List[int]) -> str:
     (post_date,post_time)=db.get_post_date_time(post_list[0])
     #print(f"[DB]At {post_date} we have {len(post_list)} posts...")
     bare_filename=s.day_list_prefix+post_date+".md"
@@ -61,12 +61,12 @@ def generate_post_list_db(post_list: typing.List[int]) -> str:
 
     return bare_filename
 
-def generate_year_db(year: int,first_day,last_day) -> str:
+def generate_year(year: int,first_day,last_day) -> str:
     global days_with_no_posts
     global days_with_one_post
     global days_with_many_posts
     text=""
-    text+=f"## {year}\n[В начало]({s.calendar_file_name}#Годы)\n\n"
+    text+=f"## {year}\n[В начало](#Годы)\n\n"
     #for h_col in range(months_cols*days_in_week_markup-1):
     #    text+="| "
     #text+="|\n"
@@ -108,7 +108,7 @@ def generate_year_db(year: int,first_day,last_day) -> str:
                         day_str="[["+db.get_post_fname(post_list[0])+"\|"+day_str+"]]"
                         days_with_one_post+=1
                     if len(post_list)>1:#у нас несколько постов
-                        day_str="**[["+generate_post_list_db(post_list)+"\|"+day_str+"]]**"
+                        day_str="**[["+generate_post_list(post_list)+"\|"+day_str+"]]**"
                         days_with_many_posts+=1
                     if len(post_list)==0 and today>first_day and today<last_day:
                         days_with_no_posts+=1
@@ -180,11 +180,11 @@ def create_indexes() -> None:
     last_day=datetime.datetime.fromisoformat(last_date)
     calendar_text="## Годы\n"
     for year in range(year_start_db,year_end_db+1):
-        calendar_text+=f"[{year}]({s.calendar_file_name}#{year}) "
+        calendar_text+=f"[{year}](#{year}) "
     calendar_text+="\n"
     print("Creating calendar...")
     for year in tqdm.tqdm(range(year_start_db,year_end_db+1),ascii=True):
-        calendar_text+=generate_year_db(year,first_day,last_day)
+        calendar_text+=generate_year(year,first_day,last_day)
 
     post_calendar=open(s.base_folder+s.indexes_folder+s.calendar_file_name,"w",encoding=s.post_encoding,newline="\n")
     post_calendar.write(calendar_text)
@@ -212,8 +212,9 @@ def create_indexes() -> None:
 
         tag_file_name=s.base_folder+s.tags_folder+tag_safe_name+".md"
         tag_file=open(tag_file_name,"w",encoding=s.post_encoding,newline="\n")
-        tag_file.write("## Тег: "+tag+"\n")
+        tag_file.write(f"## Тег: {tag} ({len(post_list)})\n")
         tag_file.write("#Теги\n\n")
+        tag_file.write("[В конец](#^note-end)\n^note-begin\n\n")
         tag_file.write("| Дата | Заголовок |\n| --- | --- |\n")
         for post_id in post_list:
             (post_date,_)=db.get_post_date_time(post_id)
@@ -221,6 +222,7 @@ def create_indexes() -> None:
             post_title=db.get_post_title(post_id)
             date_formatted=datetime.datetime.fromisoformat(post_date).strftime("%Y&#8209;%m&#8209;%d")
             tag_file.write(f"| {date_formatted} | [[{post_fname}\|{post_title}]] |\n")
+        tag_file.write("[В начало](#^note-begin)\n^note-end\n\n")
         tag_file.close()
 
     print(f"Done. Processed tags: {len(tags_list)}")
@@ -245,13 +247,13 @@ def create_indexes() -> None:
     append_bookmark(bookmarks_file,s.indexes_folder+s.tags_file_name+s.tags_n_postfix)
     append_bookmark(bookmarks_file,s.indexes_folder+s.calendar_file_name)
 
-    articles_list=db.get_post_by_contents("ARTICLES_LIST_POST")
+    articles_list=db.get_posts_by_contents("ARTICLES_LIST_POST")
     if len(articles_list)!=1:
         l.info("Warning! found %d posts with article list. must be 1",len(articles_list))
     else:
         append_bookmark(bookmarks_file,db.get_post_fname(articles_list[0])+".md")
     
-    tags_list=db.get_post_by_contents("TAGS_LIST_POST")
+    tags_list=db.get_posts_by_contents("TAGS_LIST_POST")
     if len(tags_list)!=1:
         l.info("Warning! found %d posts with tags list. must be 1",len(tags_list))
     else:

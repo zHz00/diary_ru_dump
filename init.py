@@ -6,7 +6,12 @@ import logging as l
 import settings as s
 
 def create_folders() -> None:
+    os.makedirs(s.base_folder,exist_ok=True)
+    os.makedirs(s.dump_folder,exist_ok=True)
+
     os.makedirs(s.base_folder+s.pics_folder,exist_ok=True)
+    os.makedirs(s.base_folder+s.pics_folder+s.pics_censor_folder,exist_ok=True)
+    os.makedirs(s.base_folder+s.pics_folder+s.pics_duplicate_folder,exist_ok=True)
     os.makedirs(s.base_folder+s.indexes_folder+s.days_folder,exist_ok=True)
     os.makedirs(s.base_folder+s.tags_folder,exist_ok=True)
     os.makedirs(s.dump_folder,exist_ok=True)
@@ -15,6 +20,8 @@ def create_folders() -> None:
         shutil.copytree(s.obsidian_default_settings_folder,s.base_folder,dirs_exist_ok=True)
 
     os.makedirs(s.dump_folder+s.temp_md_folder+s.pics_folder,exist_ok=True)
+    os.makedirs(s.dump_folder+s.pics_folder+s.pics_censor_folder,exist_ok=True)
+    os.makedirs(s.dump_folder+s.pics_folder+s.pics_duplicate_folder,exist_ok=True)
     os.makedirs(s.dump_folder+s.temp_md_folder+s.indexes_folder+s.days_folder,exist_ok=True)
     os.makedirs(s.dump_folder+s.temp_md_folder+s.tags_folder,exist_ok=True)
     if(not Path(s.dump_folder+s.temp_md_folder+s.obsidian_settings_folder).is_dir()):

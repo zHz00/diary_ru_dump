@@ -214,6 +214,7 @@ def add_pic(post_id,post_fname,url):
         ''',(post_fname,post_id,url))
         res=db_ret.already_exists
     db_link.commit()
+    return res
 
 def add_link(post_id,post_fname,dest_post_id,url):
     global db_cursor
@@ -514,6 +515,8 @@ def mark_deleted_comment(comment_id):
     comments_n-=1
     if comments_n<0:
         res=db_ret.comments_n_negative
+        db_link.rollback()
+        return res
     else:
         db_cursor.execute('''UPDATE POSTS SET COMMENTS_N=(?) WHERE POST_ID=(?)
         ''',(comments_n,post_id))
@@ -590,7 +593,7 @@ def get_tag_name_by_diary_id(diary_tag_id:int)->str:
         return ""
     return fetch['TAG']
 
-def get_post_by_contents(substr:str):
+def get_posts_by_contents(substr:str):
     global db_cursor
     db_cursor.execute('''
         SELECT POST_ID
@@ -625,63 +628,64 @@ def close():
 if __name__=="__main__":
     #connect()
     #create_db()
-    reset_db("test.db")
-    add_post(1,"test","2001-01-01","test time","title",5,[("Аниме",1),("Дзякиган",2),("Случай из жизни",3)],"Тестовое содержание")
-    add_post(100,"test","2001-01-01","test time2","title2",6,[("Аниме",1),("Дзякиган",2),("Автомобили",4)],"это что такое?")
-    add_pic(1,"TEST","https://example.com")
-    add_pic(1,"TEST","https://example.com")
-    add_pic(2,"TEST","https://example.com")
-    add_pic(2,"TEST","https://example.com")
-    add_link(1,"TEST",2,"https://example.com")
-    add_link(1,"TEST",1,"https://example2.com")
-    add_link(1,"TEST",2,"https://example.com")
-    add_link(2,"TEST",-1,"https://example.com")
-    add_link(2,"TEST",1,"https://example.com")
-    add_link(222002696,"TEST",222002696,"https://zhz00.diary.ru/p222002696_jeto-ne-slyozy-jeto-prosto-dozhd.htm")
-    add_link(222002696,"TEST2",222002696,"https://zhz00.diary.ru/p222002696_dsfghertdyg.htm")
-    add_link(218943387,"Список моих статей (обновлено 20221028)",218943387,"https://diary.ru/~zHz00/p218943387_spisok-moih-statej-obnovleno-2022-10-28.htm")
-    add_link(218943387,"Список моих статей (обновлено 20240509)",218943387,"https://diary.ru/~zHz00/p218943387_spisok-moih-statej-obnovleno-2024-05-09.htm")
-    add_comment(1,100,"2001-01-01","time1","Гость","test")
-    add_comment(2,100,"2002-01-01","time2","Гость","test")
-    add_comment(3,100,"2003-01-01","time3","Гость","test")
-    add_comment(4,100,"2003-01-01","time4","Гость","test")
-    add_comment(4,100,"2001-01-01","time2","Гость2","test2")
-    mark_deleted_comment(3)
-    mark_deleted_comment(3)
-    mark_not_spam_comment(4)
-    print("get_tag_name_by_diary_id(2):",get_tag_name_by_diary_id(2))
-    print("get_tag_name_by_diary_id(100):[",get_tag_name_by_diary_id(100),"]")
-    print("get_post_contents(1):",get_post_contents(1))
-    print("get_post_tags(1):",get_post_tags(1))
-    print("get_posts_list():",get_posts_list())
-    (d,t)=get_post_date_time(1)
-    print("get_post_date_time(1):",d,"|",t)
-    print("get_post_title(1):",get_post_title(1))
-    print("get_post_url(1):",get_post_url(1))
-    print("get_tags_list()",get_tags_list())
-    print("get_pics_list_plain():",get_pics_list_plain())
-    print("get_links_list_plain():",get_links_list_plain())
-    print("get_pics_list_dict():",get_pics_list_dict())
-    print("get_links_list_dict()",get_links_list_dict())
-    print("get_post_fname(1):",get_post_fname(1))
-    print("get_posts_list_at_date('test_date')):",get_posts_list_at_date("test_date")) 
-    print("get_comments_n(100):",get_comments_n(100))
-    print("get_comments_downloaded(100):",get_comments_downloaded(100))
-    print("get_comments_list(100)",get_comments_list(100))
-    print("get_comments_list(100)",get_comments_list(100,deleted=True))
-    print("get_comments_list(100)",get_comments_list(100,deleted=False))    
-    print("update_comments_n(100,5)",update_comments_n(100,5))
-    print("get_post_by_contents",get_post_by_contents("Тестовое"))
-    print("get_post_by_contents",get_post_by_contents("test3"))
+    reset_db("test.db")#+
+    add_post(1,"test","2001-01-01","test time","title",5,[("Аниме",1),("Дзякиган",2),("Случай из жизни",3)],"Тестовое содержание")#+
+    add_post(100,"test","2001-01-01","test time2","title2",6,[("Аниме",1),("Дзякиган",2),("Автомобили",4)],"это что такое?")#+
+    add_pic(1,"TEST","https://example.com")#+
+    add_pic(1,"TEST","https://example.com")#+
+    add_pic(2,"TEST","https://example.com")#+
+    add_pic(2,"TEST","https://example.com")#+
+    add_link(1,"TEST",2,"https://example.com")#+
+    add_link(1,"TEST",1,"https://example2.com")#+
+    add_link(1,"TEST",2,"https://example.com")#+
+    add_link(2,"TEST",-1,"https://example.com")#+
+    add_link(2,"TEST",1,"https://example.com")#+
+    add_link(222002696,"TEST",222002696,"https://zhz00.diary.ru/p222002696_jeto-ne-slyozy-jeto-prosto-dozhd.htm")#+
+    add_link(222002696,"TEST2",222002696,"https://zhz00.diary.ru/p222002696_dsfghertdyg.htm")#+
+    add_link(218943387,"Список моих статей (обновлено 20221028)",218943387,"https://diary.ru/~zHz00/p218943387_spisok-moih-statej-obnovleno-2022-10-28.htm")#+
+    add_link(218943387,"Список моих статей (обновлено 20240509)",218943387,"https://diary.ru/~zHz00/p218943387_spisok-moih-statej-obnovleno-2024-05-09.htm")#+
+    add_comment(1,100,"2001-01-01","time1","Гость","test")#+
+    add_comment(2,100,"2002-01-01","time2","Гость","test")#+
+    add_comment(3,100,"2003-01-01","time3","Гость","test")#+
+    add_comment(4,100,"2003-01-01","time4","Гость","test")#+
+    add_comment(4,100,"2001-01-01","time2","Гость2","test2")#+
+    mark_deleted_comment(3)#+
+    mark_deleted_comment(3)#+
+    mark_not_spam_comment(4)#+
+    print("get_tag_name_by_diary_id(2):",get_tag_name_by_diary_id(2))#+
+    print("get_tag_name_by_diary_id(100):[",get_tag_name_by_diary_id(100),"]")#+
+    print("get_post_contents(1):",get_post_contents(1))#+
+    print("get_post_tags(1):",get_post_tags(1))#+
+    print("get_posts_list():",get_posts_list())#+
+    (d,t)=get_post_date_time(1)#+
+    print("get_post_date_time(1):",d,"|",t)#+
+    print("get_post_title(1):",get_post_title(1))#+
+    print("get_post_url(1):",get_post_url(1))#+
+    print("get_tags_list()",get_tags_list())#+
+    print("get_pics_list_plain():",get_pics_list_plain())#+
+    print("get_links_list_plain():",get_links_list_plain())#+
+    print("get_pics_list_dict():",get_pics_list_dict())#+
+    print("get_links_list_dict()",get_links_list_dict())#+
+    print("get_post_fname(1):",get_post_fname(1))#+
+    print("get_posts_list_at_date('test_date')):",get_posts_list_at_date("test_date"))#+
+    print("get_comments_n(100):",get_comments_n(100))#+
+    print("get_comments_downloaded(100):",get_comments_downloaded(100))#+
+    print("get_comments_list(100)",get_comments_list(100))#+
+    print("get_comments_list(100)",get_comments_list(100,deleted=True))#+
+    print("get_comments_list(100)",get_comments_list(100,deleted=False))#+
+    print("update_comments_n(100,5)",update_comments_n(100,5))#+
+    print("get_post_by_contents",get_posts_by_contents("Тестовое"))#+
+    print("get_post_by_contents",get_posts_by_contents("test3"))#+
     list=get_comments_list(100)
     for id in list:
         print(id)
         print("get_comments_date_time",get_comment_date_time(id))
         print("get_comment_author",get_comment_author(id))
         print("get_comment_contents",get_comment_contents(id))
-    res=get_spam_comments(300)
+    res=get_spam_comments(300)#+
     for row in res:
         for col in row:
             print(col)
+        print("===")
 
     close()

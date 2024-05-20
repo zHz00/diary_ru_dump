@@ -130,7 +130,7 @@ def find_last_page() -> int:
     print("Finding last page...")
     page_url=s.diary_url
     print("Downloading "+page_url+"...")
-    page = requests.get(page_url,cookies=get_cookies())
+    page = requests.get(page_url,cookies=get_cookies())# TODO: сделать обработку исключения и повторные попытки
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
     for div in post_divs:
@@ -447,7 +447,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
 def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
     comments_on_page=30
-    comments_existing_ids=db.get_comments_list(post_id)
+    comments_existing_ids=db.get_comments_list(post_id)#NOTE: почему тут не выставлено deleted=False? зачем мне тут удалённые? разобраться!
     urls=[]
     pages=n//comments_on_page+1
     comments_n_actual=0

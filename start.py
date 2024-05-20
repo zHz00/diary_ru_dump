@@ -1,6 +1,8 @@
 import datetime
 import logging as l
 
+import click
+
 from download import download
 from download import download_comments
 from download_pics import download_pics
@@ -13,7 +15,7 @@ import settings as s
 hello_message=lambda:f'''diary.ru dump utility, version {s.version}.
 (C) zHz, 2022-2024. Licenced under MIT license, see readme.txt for details.
 
-Diary dump consists of six stages:
+Diary dump consists of seven stages:
 
 Stage 1: Download posts as HTML
 Stage 2: Download comments
@@ -31,14 +33,14 @@ Output folder: {s.base_folder}
 
 Possible scenarios:
 
-Stage:                     [  1  ][  2  ][  3  ][  4  ][  5  ][  6  ][  7  ]
+Stage:                        [  1  ][  2  ][  3  ][  4  ][  5  ][  6  ][  7  ]
 
-A. Total (default)         [  +  ][  +  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
-B. Update + markup         [ +/- ][ {"+/-" if s.download_comments==True else " - "} ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
-C. Update (no markup)      [ +/- ][ {"+/-" if s.download_comments==True else " - "} ][  -  ][  -  ][  -  ][  -  ][  -  ]
-D. Download (no markup)    [  +  ][  {"+" if s.download_comments==True else "-"}  ][  -  ][  -  ][  -  ][  -  ][  -  ]
-E. Markup                  [  -  ][  -  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
-F. Download comments       [  -  ][  {"+" if s.download_comments==True else "-"}  ][  -  ][  -  ][  -  ][  -  ][  -  ]
+A. Total                      [  +  ][  +  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
+B. Update + markup (default)  [ +/- ][ {"+/-" if s.download_comments==True else " - "} ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
+C. Update (no markup)         [ +/- ][ {"+/-" if s.download_comments==True else " - "} ][  -  ][  -  ][  -  ][  -  ][  -  ]
+D. Download (no markup)       [  +  ][  {"+" if s.download_comments==True else "-"}  ][  -  ][  -  ][  -  ][  -  ][  -  ]
+E. Markup                     [  -  ][  -  ][  +  ][  {"+" if s.download_pics==True else "-"}  ][  +  ][  +  ][  +  ]
+F. Download comments          [  -  ][  {"+" if s.download_comments==True else "-"}  ][  -  ][  -  ][  -  ][  -  ][  -  ]
 V. Change username
 W. Toggle comments enable/disable mode
 X. Toggle save html enable/disable mode (debug purpose)
@@ -93,6 +95,10 @@ continue_execution={
     'Z':False,
 }
 
+print("test1")
+
+s.load_username()
+
 logger=l.getLogger()
 file_handler=l.FileHandler(filename=s.dump_folder+"py_log"+datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")+".log",mode="w",encoding="utf-8")
 file_handler.setFormatter(l.Formatter("%(asctime)s %(levelname)s %(message)s"))
@@ -100,11 +106,11 @@ file_handler.setLevel(l.INFO)
 logger.addHandler(file_handler)
 logger.setLevel(l.INFO)
 
-s.load_username()
-
 while True:
     print(hello_message())
     letter=input().upper()
+    if letter=="":
+        letter='B'
     if letter in scenarios:
         l.info("Starting scenario: %s",letter)
         for function in scenarios[letter]:
