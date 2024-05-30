@@ -115,7 +115,7 @@ def convert_date_ru_to_iso(date:str)->str:
 def get_cookies() -> None:
     cookies=RequestsCookieJar()
     for c_name,c_value in s.saved_cookies.items():
-        cookie=requests.cookies.create_cookie(domain=s.uname+".diary.ru",name=c_name,value=c_value)
+        cookie=requests.cookies.create_cookie(domain=".diary.ru",name=c_name,value=c_value)
         cookies.set_cookie(cookie) 
     return cookies
 
@@ -130,7 +130,9 @@ def find_last_page() -> int:
     print("Finding last page...")
     page_url=s.diary_url
     print("Downloading "+page_url+"...")
-    page = requests.get(page_url,cookies=get_cookies())# TODO: сделать обработку исключения и повторные попытки
+    session=requests.Session()
+    session.cookies=get_cookies()
+    page = session.get(page_url)# TODO: сделать обработку исключения и повторные попытки
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
     for div in post_divs:
@@ -153,7 +155,9 @@ def find_last_post() -> int:
     page_url=s.diary_url
     l.info("Downloading "+page_url+"...")
     print("Downloading "+page_url+"...")
-    page = requests.get(page_url,cookies=get_cookies())
+    session=requests.Session()
+    session.cookies=get_cookies()
+    page = session.get(page_url)
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
     for div in post_divs:
@@ -182,6 +186,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
     if(post_id==0 and s.diary_url_mode==s.dum.one_post):
         post_id=find_last_post()
         if post_id==0:
+            db.close()
             return 0
     if(auto_find):
         last_page=find_last_page()
@@ -244,9 +249,12 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         print("Downloading "+page_url+"...")
         if s.diary_url_mode!=s.dum.from_file:
             tries=0
+            session=requests.Session()
+            session.cookies=get_cookies()
+
             while tries<5:
                 try:
-                    page = requests.get(page_url,cookies=get_cookies())
+                    page = session.get(page_url)
                 except:
                     tries+=1
                     l.info("failed. tries="+str(tries))
@@ -315,20 +323,41 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                         #закрытая запись. текста у нас нет, поэтому сохраняем только ИД записи
                         #обращаю внимания, что если запись доступна, но нет заголовка, то ссылка всё равно генерируется, поэтому ИД у нас есть
                     #    posts_links.append(div.parent)
-                    posts_times_s.append(div.span.contents[0])
-                    if div.find("a")!=None:
-                        if len(div.a.contents)>0:
-                            posts_titles.append(div.a.contents[0])
-                        else:
-                            posts_titles.append("(no title)")
-                    else:
+                    for span in div.find_all("span"):#в старом дизайне при скачивании спан с датой оказывается не первым спаном! при этом при открытии в браузере он на месте
+                        if span.has_attr("title"):
+                            posts_times_s.append(span.contents[0])
+                            break
+                    for a_tag in div.find_all("a"):
+                        if a_tag.has_attr("class") and "title" in a_tag["class"]:
+                            i_lock=False
+                            postActionLinks=False
+                            tmp_list=[]
+                            for child in a_tag.parent.parent.find_all(["span","ul"]):
+                                tmp_list.append(child)
+                                if child.has_attr("class") and "i-lock" in child["class"]:#закрытая запись, новый дизайн
+                                    i_lock=True
+                                if child.has_attr("class") and "postActionLinks" in child["class"]:
+                                    postActionLinks=True
+                            if i_lock==True and postActionLinks==False:#запись помечена как подзамочная, при этом нет кнопок управления. значит она реально недоступна!
+                                posts_titles.append("(closed)")
+                                break
+                            #запись не закрыта по новому дизайну, у неё действительно есть заголовок. ищем его
+                            if len(a_tag.contents)>0:
+                                posts_titles.append(a_tag.contents[0])
+                            else:
+                                posts_titles.append("(no title)")
+                            break
+                    else:#for
+                        #это работает случайно. если среди тегов a найдётся тег с заголовком, то выполняется брейк, а значит элс пропускатеся
+                        #с другой стороны, если там нужного тега нет, то будет выполнена часть элс, которая работает для закрытых постов
+                        #это относится только к старому дизайну. для нового идёт друга яобработка, см. выше
                         posts_titles.append("(closed)")
                 test_name="postLinksBackg"
                 if class_name == test_name and class_name_2nd!="prevnext":#старый дизайн
                     #prevnext это блок "предыдущая запись-следующая запись", он нас не интересует
                     #if test_epigraph(epigraph,test_name)==False:
                     #    continue
-                    posts_links.append(convert_to_old_style(div.div.a["href"]))
+                    posts_links.append(convert_to_old_style(div.span.a["href"]))
                     id_begin=div.span.a["href"].lower().find(s.link_marks[s.links_style].lower())+len(s.link_marks[s.links_style])
                     id_end=div.span.a["href"].rfind("_")
                     if id_end==-1:
@@ -349,17 +378,12 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                     percentage=int(posts_counter/abs(s.stop-s.start)*100)
                     l.info(f"[{percentage}%]{posts_dates[-1]}, ID: {posts_ids[-1]}, {posts_titles[-1]}")
                     print(f"[{percentage}%]{posts_dates[-1]}, ID: {posts_ids[-1]}, {posts_titles[-1]}")
-                test_name="postInner"
-                if class_name==test_name:
-                    #if test_epigraph(epigraph,test_name)==False:
-                    #   continue
-                    posts_contents.append(remove_newlines_ex(div))#div.prettify().replace('\r', '').replace('\n', ''))
+                if class_name == "postInner":
+                    posts_contents.append(remove_newlines_ex(div.div.div))
                 if class_name == "post-inner":
                     posts_contents.append(remove_newlines_ex(div))
                 test_name="postContent"
                 if class_name == test_name:
-                    #if test_epigraph(epigraph,test_name)==False:
-                    #    continue
                     tags=[]
                     post_tags=[]
                     post_tags_ids=[]
@@ -385,8 +409,8 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                     spans=div.find_all("span")
                     for span in spans:
                         if span.has_attr("class"):
-                            if span["class"][0]=="comments_count_link":
-                                comments_n=spans[0].a.contents[0]
+                            if span["class"][0]=="comments_count_link" and span.a is not None:
+                                comments_n=span.a.contents[0].split("\n")[0]#последнее нужно для старого дизайна, где в поле кроме цифра находится ещё новая строка, десятки пробелов и ДЕФИС, который в ноовм дизайне находится вне тега
                     posts_comments_n.append(comments_n)
 
                     
@@ -422,12 +446,14 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
                 l.info(f"Update complete, found old posts. Saved pages={saved_pages}")
                 print("Update complete, found old posts.")
+                db.close()
                 return
             if update==True and comments_n_changed==False and s.diary_url_mode==s.dum.newest_comments:
                 equal_comments+=1
                 if equal_comments>5:#не всегда равное число комментов означает, что пора прекращать, т.к. дайари при удалении коммента может оставлять пост в списке
                     l.info("Update comments complete, found posts with equal comments counter.")
                     print("Update comments complete, found posts with equal comments counter.")
+                    db.close()
                     return
             else:
                 equal_comments=0
@@ -451,13 +477,16 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
     urls=[]
     pages=n//comments_on_page+1
     comments_n_actual=0
+    session=requests.Session()
+    session.cookies=get_cookies()
+
     for page in range(pages):
         url=f"https://{s.uname}.diary.ru/p{post_id}.htm?from={comments_on_page*page}"
         urls.append(url)
 
         print(f"[{percentage}%, {left} posts left] Comments: {n}. Downloading "+url+"...")
         l.info(f"[{percentage}%, {left} posts left] Comments: {n}. Downloading "+url+"...")
-        page = requests.get(url,cookies=get_cookies())
+        page = session.get(url)
         page = BeautifulSoup(change_pre(page.text), 'lxml')
             
         #c_ означает comment_. это сокращение
@@ -476,36 +505,35 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
         posts_divs=page.find_all("div")
         for div in posts_divs:
             if div.has_attr("class") and len(div["class"])>0:
-                class_name=div["class"][0]
-                if len(div["class"])>1:
-                    class_name_2nd=div["class"][1]
-                else:
-                    class_name_2nd=""
+                class_names=div["class"]
                 #отладочный вывод, когда дайри-программист в очередной раз перепиливает разметку
                 #id_name=div["id"] if div.has_attr("id") else "[none]"
                 #print("Class:"+class_name+", id="+id_name)
 
-                if class_name == c_class_name_id or class_name_2nd==c_class_name_id:
+                if c_class_name_id in class_names:
                     if div.has_attr("data-id"):
                         c_id.append(div["data-id"])
                     else:
                         l.info("Warning! No ID! POST_ID: "+str(post_id))
-                if class_name == "authorName" and div.has_attr("style")==False:#авторство есть и у поста, с которого начинается ветка, но там есть дополнительный тег
+                if ("authorName" in class_names) and (("discussion" in div.parent.parent.parent["class"]) or ("singleComment" in div.parent["class"])):#авторство есть и у поста, с которого начинается ветка, но там есть дополнительный тег
                     contents=div.a.strong.contents
                     if(len(contents)==0):
                         c_author.append("UNKNOWN")#такое реально есть в https://zhz00.diary.ru/p175991102.htm . Комментарий удалён администрацией и почему-то оставлена записочка об этом!
                     else:
                         c_author.append(div.a.strong.contents[0])
-                if class_name == "post-header":
+                if "post-header" in class_names or (("header" in class_names) and ("singleComment" in div.parent["class"])):
                     dt=div.span.contents[0]
                     if len(dt)>10:#у стартового поста только время, а это всего 5 символов, так что если больше 10, то это комментарий
                         c_date.append(convert_date_ru_to_iso(dt[:10]))
                         c_time.append(dt[13:])
-                if class_name== "post-inner" and not (div.parent.has_attr("class") and div.parent["class"][0]=="post-inner"):#if(div.parent.find("p")!=None):#если тегов у коммента нет, то это не работает
+                if ("post-inner" in class_names) and not (div.parent.has_attr("class") and div.parent["class"][0]=="post-inner"):#if(div.parent.find("p")!=None):#если тегов у коммента нет, то это не работает
                     if first_on_page==True:
                         first_on_page=False
                     else:
                         c_contents.append(remove_newlines_ex(div))
+                #для старого дизайна напишем отдельное условие, чтобы не городить лишний текст
+                if("postInner" in class_names) and ("singleComment" in div.parent.parent["class"]):
+                    c_contents.append(remove_newlines_ex(div.div.div))
         len1=len(c_id)
         len2=len(c_author)
         len3=len(c_date)
@@ -562,6 +590,8 @@ def download_comments(update:bool):
         percentage=(x+1)*100//posts_n
         left=posts_n-x-1
         download_comments_from_post(posts_to_download[x],posts_comments_n[x],percentage,left)
+
+    db.close()
 
 if __name__=="__main__":
     #convert_to_old_style("https://zhz00.diary.ru/p221381736_podschyot-prosmotrov-v-telegrame.htm")

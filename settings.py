@@ -142,14 +142,14 @@ def enter_username() -> None:
     settings_file.close()
     load_username()
 
-def load_username() -> None:
+def load_username(postfix:int="") -> None:
     global uname
     global session
     settings_file=open(settings_file_name,"r",encoding=settings_file_encoding)
     uname=settings_file.readline().strip()
     session=settings_file.readline().strip()
     settings_file.close()
-    change_username()
+    change_username(postfix)
     
 def load_tokens():
     global tg_ph_token
@@ -164,7 +164,7 @@ def load_tokens():
     print("Loaded channel name: "+tg_channel_name)
 
 
-def change_username() -> None:
+def change_username(postfix:str="") -> None:
     global diary_url
     global diary_url_comments
     global link_marks
@@ -179,14 +179,14 @@ def change_username() -> None:
     saved_cookies['_identity_']=session
 
     if diary_url_mode==dum.one_post:
-        base_folder="../"+uname+"_diary_obsidian/"
-        dump_folder="../"+uname+"_dump/"
+        base_folder="../"+uname+postfix+"_diary_obsidian/"
+        dump_folder="../"+uname+postfix+"_dump/"
     else:
-        dump_folder="../"+uname+"_dump/"
+        dump_folder="../"+uname+postfix+"_dump/"
         if download_pics:
-            base_folder="../"+uname+"_diary_obsidian/"
+            base_folder="../"+uname+postfix+"_diary_obsidian/"
         else:
-            base_folder="../"+uname+"_diary_obsidian_nopics/"
+            base_folder="../"+uname+postfix+"_diary_obsidian_nopics/"
 
 
 #    if len(saved_cookies['_session'])<2:

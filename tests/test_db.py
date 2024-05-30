@@ -1,13 +1,15 @@
+from init import get_function_name
 import db
 
+tp="tests/data/"
 
 def test_connect():
-    db.reset_db("test.db")
+    db.reset_db(get_function_name()+".db")
     res=db.check_connection()
     assert res==0
-    db.close()
+    db.close(delete=True)
 def test_adding_posts():
-    db.reset_db("test.db")
+    db.reset_db(get_function_name()+".db")
     res=db.check_connection()
     assert res == 0
     res=db.add_post(1,"test","2001-01-01","test time","title",5,[("Аниме",1),("Дзякиган",2),("Случай из жизни",3)],"Тестовое содержание")
@@ -54,10 +56,10 @@ def test_adding_posts():
     list=db.get_post_tags(100)
     assert list==["Аниме","Дзякиган","Автомобили"]
 
-    db.close()
+    db.close(delete=True)
 
 def test_adding_links():
-    db.reset_db("test.db")
+    db.reset_db(get_function_name()+".db")
     res=db.check_connection()
     assert res == 0
     res=db.add_post(1,"test","2001-01-01","test time","title",5,[("Аниме",1),("Дзякиган",2),("Случай из жизни",3)],"Тестовое содержание")
@@ -95,10 +97,10 @@ def test_adding_links():
     assert len(list)==5
     assert list==["https://example.com","https://example2.com","https://example.com","https://zhz00.diary.ru/p222002696_dsfghertdyg.htm","https://diary.ru/~zHz00/p218943387_spisok-moih-statej-obnovleno-2024-05-09.htm"]
 
-    db.close()
+    db.close(delete=True)
 
 def test_adding_pics():
-    db.reset_db("test.db")
+    db.reset_db(get_function_name()+".db")
     res=db.check_connection()
     assert res == 0
     res=db.add_post(1,"test","2001-01-01","test time","title",5,[("Аниме",1),("Дзякиган",2),("Случай из жизни",3)],"Тестовое содержание")
@@ -122,10 +124,10 @@ def test_adding_pics():
     assert len(list)==2
     assert list==["https://example.com","https://example.com"]
 
-    db.close()
+    db.close(delete=True)
 
 def test_search():
-    db.reset_db("test.db")
+    db.reset_db(get_function_name()+".db")
     res=db.check_connection()
     assert res == 0
     res=db.add_post(1,"test","2001-01-01","test time","title",5,[("Аниме",1),("Дзякиган",2),("Случай из жизни",3)],"Тестовое содержание")
@@ -167,10 +169,10 @@ def test_search():
     list=db.get_posts_by_contents("test3")
     assert len(list)==0
 
-    db.close()
+    db.close(delete=True)
 
 def test_adding_comments():
-    db.reset_db("test.db")
+    db.reset_db(get_function_name()+".db")
     res=db.check_connection()
     assert res == 0
     res=db.add_post(100,"test","2001-01-01","test time2","title2",0,[("Аниме",1),("Дзякиган",2),("Автомобили",4)],"это что такое?")
@@ -296,4 +298,4 @@ def test_adding_comments():
     assert len(list)==3
     assert list==[1,2,4]
 
-    db.close()
+    db.close(delete=True)

@@ -3,6 +3,7 @@ import settings as s
 import os
 import enum
 import re
+import logging as l
 
 db_link=None
 db_cursor=None
@@ -23,12 +24,17 @@ def connect(create=True):
     global db_link
     global db_cursor
 
+    l.info("DB: "+s.dump_folder+s.db_name)
+
     if db_link is not None:
+        l.info("DB: already connected!")
         return db_ret.already_exists
 
     if not os.path.isfile(s.dump_folder+s.db_name):
+        l.info("DB: need creation")
         need_creation=True
     else:
+        l.info("DB: already exist")
         need_creation=False
 
     db_link=sl.connect(s.dump_folder+s.db_name)
@@ -620,72 +626,137 @@ def reset_posts():
     DELETE FROM POSTS
     ''')#delete all
 
-def close():
+"""
+
+"""
+
+def compare_with_other_db(second_db:str)->dict():
+    global db_cursor
     global db_link
-    db_link.close()
+
+    report=dict()
+
+    db_cursor.execute("ATTACH ? AS DB2",(second_db,))
+
+    db_cursor.execute("SELECT * FROM main.POSTS EXCEPT SELECT * FROM DB2.POSTS ORDER BY main.POSTS.POST_ID")
+    fetch=db_cursor.fetchall()
+    print("posts 1-2. diff len="+str(len(fetch)))
+    list12=[]
+    for i in fetch:
+        list12.append(i["POST_ID"])
+
+    db_cursor.execute("SELECT * FROM DB2.POSTS EXCEPT SELECT * FROM main.POSTS ORDER BY DB2.POSTS.POST_ID")
+    fetch=db_cursor.fetchall()
+    print("posts 2-1. diff len="+str(len(fetch)))
+    list21=[]
+    for i in fetch:
+        list21.append(i["POST_ID"])
+
+    report["POSTS"]=[list12,list21]
+
+    #==================================================================================
+    db_cursor.execute("SELECT * FROM main.TAGS EXCEPT SELECT * FROM DB2.TAGS ORDER BY main.TAGS.TAG_ID")
+    fetch=db_cursor.fetchall()
+    print("tags 1-2. diff len="+str(len(fetch)))
+    list12=[]
+    for i in fetch:
+        list12.append(i["TAG_ID"])
+
+    db_cursor.execute("SELECT * FROM DB2.TAGS EXCEPT SELECT * FROM main.TAGS ORDER BY DB2.TAGS.TAG_ID")
+    fetch=db_cursor.fetchall()
+    print("tags 2-1. diff len="+str(len(fetch)))
+    list21=[]
+    for i in fetch:
+        list21.append(i["TAG_ID"])
+
+    report["TAGS"]=[list12,list21]
+
+    #==================================================================================
+    db_cursor.execute("SELECT * FROM main.TAGS_LINKED EXCEPT SELECT * FROM DB2.TAGS_LINKED ORDER BY main.TAGS_LINKED.POST_ID")
+    fetch=db_cursor.fetchall()
+    print("tags_linked 1-2. diff len="+str(len(fetch)))
+    list12=[]
+    for i in fetch:
+        list12.append(i["POST_ID"])
+
+    db_cursor.execute("SELECT * FROM DB2.TAGS_LINKED EXCEPT SELECT * FROM main.TAGS_LINKED ORDER BY DB2.TAGS_LINKED.POST_ID")
+    fetch=db_cursor.fetchall()
+    print("tags_linked 2-1. diff len="+str(len(fetch)))
+    list21=[]
+    for i in fetch:
+        list21.append(i["POST_ID"])
+
+    report["TAGS_LINKED"]=[list12,list21]
+
+    #==================================================================================
+    db_cursor.execute("SELECT * FROM main.PICS EXCEPT SELECT * FROM DB2.PICS ORDER BY main.PICS.URL")
+    fetch=db_cursor.fetchall()
+    print("pics 1-2. diff len="+str(len(fetch)))
+    list12=[]
+    for i in fetch:
+        list12.append(i["URL"])
+
+    db_cursor.execute("SELECT * FROM DB2.PICS EXCEPT SELECT * FROM main.PICS ORDER BY DB2.PICS.URL")
+    fetch=db_cursor.fetchall()
+    print("pics 2-1. diff len="+str(len(fetch)))
+    list21=[]
+    for i in fetch:
+        list21.append(i["URL"])
+
+    report["PICS"]=[list12,list21]
+
+    #==================================================================================
+    db_cursor.execute("SELECT * FROM main.LINKS EXCEPT SELECT * FROM DB2.LINKS ORDER BY main.LINKS.URL")
+    fetch=db_cursor.fetchall()
+    print("links 1-2. diff len="+str(len(fetch)))
+    list12=[]
+    for i in fetch:
+        list12.append(i["URL"])
+
+    db_cursor.execute("SELECT * FROM DB2.LINKS EXCEPT SELECT * FROM main.LINKS ORDER BY DB2.LINKS.URL")
+    fetch=db_cursor.fetchall()
+    print("links 2-1. diff len="+str(len(fetch)))
+    list21=[]
+    for i in fetch:
+        list21.append(i["URL"])
+
+    report["LINKS"]=[list12,list21]
+
+    #==================================================================================
+    db_cursor.execute("SELECT * FROM main.COMMENTS EXCEPT SELECT * FROM DB2.COMMENTS ORDER BY main.COMMENTS.COMMENT_ID")
+    fetch=db_cursor.fetchall()
+    print("comments 1-2. diff len="+str(len(fetch)))
+    list12=[]
+    for i in fetch:
+        list12.append(i["COMMENT_ID"])
+
+    db_cursor.execute("SELECT * FROM DB2.COMMENTS EXCEPT SELECT * FROM main.COMMENTS ORDER BY DB2.COMMENTS.COMMENT_ID")
+    fetch=db_cursor.fetchall()
+    print("comments 2-1. diff len="+str(len(fetch)))
+    list21=[]
+    for i in fetch:
+        list21.append(i["COMMENT_ID"])
+
+    report["COMMENTS"]=[list12,list21]
+
+
+
+    db_cursor.execute("DETACH DB2")
+    db_link.commit()
+
+    return report
+
+
+
+
+
+def close(delete=False):
+    global db_link
+    if db_link is not None:
+        db_link.close()
     db_link=None
+    if delete==True:
+        os.remove(s.dump_folder+s.db_name)
 
 if __name__=="__main__":
-    #connect()
-    #create_db()
-    reset_db("test.db")#+
-    add_post(1,"test","2001-01-01","test time","title",5,[("Аниме",1),("Дзякиган",2),("Случай из жизни",3)],"Тестовое содержание")#+
-    add_post(100,"test","2001-01-01","test time2","title2",6,[("Аниме",1),("Дзякиган",2),("Автомобили",4)],"это что такое?")#+
-    add_pic(1,"TEST","https://example.com")#+
-    add_pic(1,"TEST","https://example.com")#+
-    add_pic(2,"TEST","https://example.com")#+
-    add_pic(2,"TEST","https://example.com")#+
-    add_link(1,"TEST",2,"https://example.com")#+
-    add_link(1,"TEST",1,"https://example2.com")#+
-    add_link(1,"TEST",2,"https://example.com")#+
-    add_link(2,"TEST",-1,"https://example.com")#+
-    add_link(2,"TEST",1,"https://example.com")#+
-    add_link(222002696,"TEST",222002696,"https://zhz00.diary.ru/p222002696_jeto-ne-slyozy-jeto-prosto-dozhd.htm")#+
-    add_link(222002696,"TEST2",222002696,"https://zhz00.diary.ru/p222002696_dsfghertdyg.htm")#+
-    add_link(218943387,"Список моих статей (обновлено 20221028)",218943387,"https://diary.ru/~zHz00/p218943387_spisok-moih-statej-obnovleno-2022-10-28.htm")#+
-    add_link(218943387,"Список моих статей (обновлено 20240509)",218943387,"https://diary.ru/~zHz00/p218943387_spisok-moih-statej-obnovleno-2024-05-09.htm")#+
-    add_comment(1,100,"2001-01-01","time1","Гость","test")#+
-    add_comment(2,100,"2002-01-01","time2","Гость","test")#+
-    add_comment(3,100,"2003-01-01","time3","Гость","test")#+
-    add_comment(4,100,"2003-01-01","time4","Гость","test")#+
-    add_comment(4,100,"2001-01-01","time2","Гость2","test2")#+
-    mark_deleted_comment(3)#+
-    mark_deleted_comment(3)#+
-    mark_not_spam_comment(4)#+
-    print("get_tag_name_by_diary_id(2):",get_tag_name_by_diary_id(2))#+
-    print("get_tag_name_by_diary_id(100):[",get_tag_name_by_diary_id(100),"]")#+
-    print("get_post_contents(1):",get_post_contents(1))#+
-    print("get_post_tags(1):",get_post_tags(1))#+
-    print("get_posts_list():",get_posts_list())#+
-    (d,t)=get_post_date_time(1)#+
-    print("get_post_date_time(1):",d,"|",t)#+
-    print("get_post_title(1):",get_post_title(1))#+
-    print("get_post_url(1):",get_post_url(1))#+
-    print("get_tags_list()",get_tags_list())#+
-    print("get_pics_list_plain():",get_pics_list_plain())#+
-    print("get_links_list_plain():",get_links_list_plain())#+
-    print("get_pics_list_dict():",get_pics_list_dict())#+
-    print("get_links_list_dict()",get_links_list_dict())#+
-    print("get_post_fname(1):",get_post_fname(1))#+
-    print("get_posts_list_at_date('test_date')):",get_posts_list_at_date("test_date"))#+
-    print("get_comments_n(100):",get_comments_n(100))#+
-    print("get_comments_downloaded(100):",get_comments_downloaded(100))#+
-    print("get_comments_list(100)",get_comments_list(100))#+
-    print("get_comments_list(100)",get_comments_list(100,deleted=True))#+
-    print("get_comments_list(100)",get_comments_list(100,deleted=False))#+
-    print("update_comments_n(100,5)",update_comments_n(100,5))#+
-    print("get_post_by_contents",get_posts_by_contents("Тестовое"))#+
-    print("get_post_by_contents",get_posts_by_contents("test3"))#+
-    list=get_comments_list(100)
-    for id in list:
-        print(id)
-        print("get_comments_date_time",get_comment_date_time(id))
-        print("get_comment_author",get_comment_author(id))
-        print("get_comment_contents",get_comment_contents(id))
-    res=get_spam_comments(300)#+
-    for row in res:
-        for col in row:
-            print(col)
-        print("===")
-
-    close()
+    print("use test_db.py!")

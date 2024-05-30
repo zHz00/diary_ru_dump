@@ -14,7 +14,12 @@ def check_session()->bool:
     session=requests.Session()
     session.cookies=download.get_cookies()
     res=session.get(url)
-    if res.text.find("https://diary.ru/user/registration")!=-1:
+    if s.download_html:
+        htmlfile_name=s.dump_folder+f"session.html"
+        htmlfile=open(htmlfile_name,"w",encoding=s.post_encoding)
+        htmlfile.write(res.text)
+        htmlfile.close()
+    if res.text.find("https://diary.ru/user/logout")==-1:
         print("Probably, not logged in! (check)")
         return False
     print("Session OK")

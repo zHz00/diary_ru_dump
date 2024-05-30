@@ -2,6 +2,7 @@ import os
 import shutil
 from pathlib import Path
 import logging as l
+import inspect
 
 import settings as s
 
@@ -20,8 +21,8 @@ def create_folders() -> None:
         shutil.copytree(s.obsidian_default_settings_folder,s.base_folder,dirs_exist_ok=True)
 
     os.makedirs(s.dump_folder+s.temp_md_folder+s.pics_folder,exist_ok=True)
-    os.makedirs(s.dump_folder+s.pics_folder+s.pics_censor_folder,exist_ok=True)
-    os.makedirs(s.dump_folder+s.pics_folder+s.pics_duplicate_folder,exist_ok=True)
+    os.makedirs(s.dump_folder+s.temp_md_folder+s.pics_folder+s.pics_censor_folder,exist_ok=True)
+    os.makedirs(s.dump_folder+s.temp_md_folder+s.pics_folder+s.pics_duplicate_folder,exist_ok=True)
     os.makedirs(s.dump_folder+s.temp_md_folder+s.indexes_folder+s.days_folder,exist_ok=True)
     os.makedirs(s.dump_folder+s.temp_md_folder+s.tags_folder,exist_ok=True)
     if(not Path(s.dump_folder+s.temp_md_folder+s.obsidian_settings_folder).is_dir()):
@@ -117,5 +118,11 @@ def log_call(func):
         #l.info(f"{func.__name__} returned: {result}")
         
         # Return the result
+        l.info(f"Returning {func.__name__}: {result}")
         return result
     return wrap
+
+def get_function_name():
+    # get the frame object of the function
+    frame = inspect.currentframe()
+    return frame.f_back.f_code.co_name
