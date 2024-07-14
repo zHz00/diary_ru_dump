@@ -26,7 +26,7 @@ def write_placeholder(type:plc_type,file:str) -> None:
         write_placeholder.censor_image=placeholder_image_stream.read()
         placeholder_image_stream.close()
 
-    if type==plc_type.DUMMY:
+    if type==plc_type.CENSOR:
         out_pic=open(file,"rb")
         contents=out_pic.read()
         backup_pic=open(s.dump_folder+s.temp_md_folder+s.pics_folder+os.path.basename(file),"wb")
@@ -183,7 +183,8 @@ def download_pics(post_id=-1) -> None:
         if s.diary_url_mode!=s.dum.from_file:
             try:
                 pic=requests.get(pic_url,headers=s.user_agent)
-            except:
+            except Exception as e:
+                print(e.__cause__)
                 write_placeholder(plc_type.DUMMY,s.base_folder+s.pics_folder+check_length(pic_name))
                 placeholders+=1
                 warning="[DB]Error during downloading ["+pic_url+"]! Skipping..."

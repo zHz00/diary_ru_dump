@@ -157,7 +157,7 @@ def find_last_post() -> int:
     print("Downloading "+page_url+"...")
     session=requests.Session()
     session.cookies=get_cookies()
-    page = session.get(page_url)
+    page = session.get(page_url)#TODO: сделать трай эксепт с циклом
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
     for div in post_divs:
@@ -570,10 +570,11 @@ def download_comments(update:bool):
     if s.download_comments==False:
         print("Skip.")
         return
-    db.connect()
     if update==True:
         s.diary_url_mode=s.dum.newest_comments
         download(update=True,auto_find=True)
+
+    db.connect()
     
     print("Generating post list...")
     posts=db.get_posts_list()

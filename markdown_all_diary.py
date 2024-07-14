@@ -14,7 +14,7 @@ from create_indexes import convert_tag_to_safe
 
 times_md=[]
 
-def remove_backslashes_in_code(contents:str,post_id:int)->str:
+def replace_special_characters_in_code(contents:str,post_id:int)->str:
     code_markers=[]
     pair=[]
     for i,m in enumerate(re.finditer("```",contents)):
@@ -32,7 +32,12 @@ def remove_backslashes_in_code(contents:str,post_id:int)->str:
     for i in range(len(code_markers)):
         if i!=0:
             contents_new+=contents[code_markers[i-1][1]:code_markers[i][0]]
-        contents_new+=contents[code_markers[i][0]:code_markers[i][1]].replace("\_","_").replace("\*","*")
+        contents_new+=contents[code_markers[i][0]:code_markers[i][1]]\
+            .replace("\_","_")\
+            .replace("\*","*")\
+            .replace("&gt;",">")\
+            .replace("&lt;","<")\
+            .replace("&amp;","&")
     contents_new+=contents[code_markers[-1][1]:]
     #print(contents_new)
     return contents_new
@@ -268,12 +273,16 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         add_times(times_md)#10
         #линуксовые концы строк т.к. обсидиан всё равно их заменит
         f_out=open(out_name,"w",encoding=s.post_encoding,errors="ignore",newline='\n')
-        contents=contents.replace("&lt;br&gt;","\n")
+        contents=contents\
+                    .replace("&lt;br&gt;","\n")\
+                    .replace("&lt;","<span>&</span>lt;")\
+                    .replace("&gt;","<span>&</span>gt;")#экспериментальная штука для предотвращения преобразования хтмл-подстановок
+                    #.replace("")
         if s.diary_url_mode==s.dum.one_post:
             out_contents=markdownify.markdownify(contents,strong_em_symbol=markdownify.UNDERSCORE,escape_asterisks=True,keep_inline_images_in=["tr","td","th","a"]).strip()
         else:
             out_contents=markdownify.markdownify(contents,keep_inline_images_in=["tr","td","th","a"]).strip()
-        out_contents=remove_backslashes_in_code(out_contents,post_id)
+        out_contents=replace_special_characters_in_code(out_contents,post_id)
             #out_contents=normalize_to_prev_ver(out_contents)
             #поскольку я собираюсь докачивать комментарии, все файлы всё равно будут изменены и репозиторий с хранилищем обсидиана будет залит заново
             #так что более нет необходимости хранить совместимость
@@ -286,6 +295,7 @@ def markdown_all_diary(reset: bool,post_id:int=0) -> None:
         add_times(times_md)#12
 
 
+    db.close()
     print(f"\nend (markdown). All={len(file_list_db)}, renamed={renamed_count}, tags={tag_count_db}")
     if s.diary_url_mode==s.dum.one_post:
         return out_name,out_len

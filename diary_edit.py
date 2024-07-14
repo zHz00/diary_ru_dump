@@ -31,7 +31,7 @@ def delete_comment(comment_id:int,post_id:int)->int:
     url=f"https://{s.uname}.diary.ru/p{post_id}.htm"
     session=requests.Session()
     session.cookies=download.get_cookies()
-    res=session.get(url)
+    res=session.get(url)#TODO: сделать обработку исключений
     if res.text.find("https://diary.ru/user/registration")!=-1:
         print("Probably, not logged in!")
         return 404
@@ -115,6 +115,7 @@ def detect_spam()->None:
         comments_not_spam[idx]=0
         next_c()
     def esc():
+        db.close()
         quit(0)
     def go():
         not_spam_n=sum(comments_not_spam)
@@ -167,6 +168,7 @@ def detect_spam()->None:
                     print("Wait for 5 sec...")
                     time.sleep(5.0)
         print("Done.")
+        db.close()
         quit(0)
 
     actions=dict()
@@ -176,6 +178,8 @@ def detect_spam()->None:
     actions['x']=not_spam
     actions['q']=esc
     actions['\r']=go
+
+    db.connect()
     comments_list=db.get_spam_comments(365)#комментарии старши 600 дней
     total=len(comments_list)
     if total==0:
@@ -201,7 +205,6 @@ def detect_spam()->None:
     
 
 if __name__=="__main__":
-    db.connect()
     s.load_username()
     if check_session()==False:
         quit(1)

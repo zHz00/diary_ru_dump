@@ -19,7 +19,7 @@ def send_text(text,preview=True):
     url=req_prefix+__token+"/sendMessage"
     #print("url:"+url)
     #print("text:"+text)
-    res=requests.post(url,data=data)
+    res=requests.post(url,data=data)#TODO: неответ
     return res
 
 def send_image(caption,file):

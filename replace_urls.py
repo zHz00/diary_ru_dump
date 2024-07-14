@@ -18,10 +18,12 @@ def post_replace(file_name: str,str_from: str,str_to: str) -> None:
         return
     post_contents=post_r.read()
     post_r.close()
-    post_contents=post_contents.replace(str_from,str_to)
+    post_contents_new=post_contents.replace("<"+str_from+">","["+str_from+"]("+str_to+")")#обработка ссылок вида <https://example.com/1.gif>, которые должны превращаться в [https://example.com/1.gif](pics/1.gif)
+    if post_contents_new==post_contents:#чтобы не было двойной замены, иначе при повторной замене https://example.com/1.gif заменяется на pics/1.gif и выходит [pics/1.gif](pics/1.gif)
+        post_contents_new=post_contents.replace(str_from,str_to)
 
     post_w=open(file_name,"w",encoding=s.post_encoding,newline='\n')
-    post_w.write(post_contents)
+    post_w.write(post_contents_new)
     post_w.close()
 
 def strip_post_id(url: str) -> str:

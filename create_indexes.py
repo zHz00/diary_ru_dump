@@ -4,6 +4,7 @@ import calendar
 import typing
 import re
 from operator import itemgetter
+import logging as l
 
 import tqdm
 
@@ -262,7 +263,7 @@ def create_indexes() -> None:
 }''')
     bookmarks_file.close()
 
-
+    db.close()
 
 if __name__=="__main__":
     init.create_folders()

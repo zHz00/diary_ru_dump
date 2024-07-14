@@ -10,7 +10,7 @@ import db
 usernames=["user_new_anon","user_new_logged_in","user_old_anon","user_old_logged_in"]
 
 @pytest.mark.parametrize("username_file",usernames)
-def test_download_with_comments(username_file:str):
+def test_download_with_comments(username_file:str,ignore_compare_errors:bool=False):
     db.close()
     time.sleep(5.0)
     s.settings_file_name="tests/data/"+username_file+".txt"
@@ -45,24 +45,30 @@ def test_download_with_comments(username_file:str):
 
     report=db.compare_with_other_db("tests/data/"+db_compare_name)
 
-    assert report["POSTS"][0]==[]
-    assert report["POSTS"][1]==[]
+    print(report)
 
-    assert report["TAGS"][0]==[]
-    assert report["TAGS"][1]==[]
+    if ignore_compare_errors==False:
+        assert report["POSTS"][0]==[]
+        assert report["POSTS"][1]==[]
 
-    assert report["TAGS_LINKED"][0]==[]
-    assert report["TAGS_LINKED"][1]==[]
+        assert report["TAGS"][0]==[]
+        assert report["TAGS"][1]==[]
 
-    assert report["LINKS"][0]==[]
-    assert report["LINKS"][1]==[]
+        assert report["TAGS_LINKED"][0]==[]
+        assert report["TAGS_LINKED"][1]==[]
 
-    assert report["PICS"][0]==[]
-    assert report["PICS"][1]==[]
+        assert report["LINKS"][0]==[]
+        assert report["LINKS"][1]==[]
 
-    assert report["COMMENTS"][0]==[]
-    assert report["COMMENTS"][1]==[]
+        assert report["PICS"][0]==[]
+        assert report["PICS"][1]==[]
+
+        assert report["COMMENTS"][0]==[]
+        assert report["COMMENTS"][1]==[]
+
     db.close()
 
 if __name__=="__main__":
-    test_download_with_comments("user_new_logged_in")
+    #test_download_with_comments("user_new_logged_in")
+    for u in usernames:
+        test_download_with_comments(u,True)

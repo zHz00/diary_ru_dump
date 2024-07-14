@@ -1,4 +1,5 @@
 import os
+import filecmp
 import shutil
 from pathlib import Path
 import logging as l
@@ -126,3 +127,52 @@ def get_function_name():
     # get the frame object of the function
     frame = inspect.currentframe()
     return frame.f_back.f_code.co_name
+
+class dircmp_report:
+    left_only=[]
+    right_only=[]
+    diff_files=[]
+
+class dircmp_deep(filecmp.dircmp):
+    """
+    Compare the content of dir1 and dir2. In contrast with filecmp.dircmp, this
+    subclass compares the content of files with the same path.
+    """
+    def phase3(self):
+        """
+        Find out differences between common files.
+        Ensure we are using content comparison with shallow=False.
+        """
+        fcomp = filecmp.cmpfiles(self.left, self.right, self.common_files,
+                                 shallow=False)
+        self.same_files, self.diff_files, self.funny_files = fcomp
+
+    def report_full_closure_as_list(self):
+        r=dircmp_report()
+        """        r.left_only=[self.left+ x for x in self.left_only]
+        r.right_only=[self.right+ x for x in self.right_only]
+        r.diff_files=[self.left+ x for x in self.diff_files]#показываем путь лефт, потому что всё равно, показывать лефт или райт
+        self.subdirs
+        for sd in self.subdirs.values():
+            r_tmp=dircmp_report()
+            sd_dircmp=dircmp_deep(sd.left,sd.right)#игнор пока не настраивается
+            r_tmp=sd_dircmp.report_full_closure_as_list()
+            r.left_only.extend([self.left+ x for x in r_tmp.left_only])
+            r.right_only.extend([self.right+ x for x in r_tmp.right_only])
+            r.diff_files.extend([self.left+ x for x in r_tmp.diff_files])
+        return r"""
+
+        """r.left_only=self.left_only.copy()
+        r.right_only=self.right_only.copy()
+        r.diff_files=self.diff_files.copy()#показываем путь лефт, потому что всё равно, показывать лефт или райт"""
+        r.left_only=[self.left+"/"+ x for x in self.left_only]
+        r.right_only=[self.right+"/"+ x for x in self.right_only]
+        r.diff_files=[self.left+"/"+ x for x in self.diff_files]#показываем путь лефт, потому что всё равно, показывать лефт или райт
+        for sd in self.subdirs.values():
+            r_tmp=dircmp_report()
+            sd_dircmp=dircmp_deep(sd.left,sd.right)#игнор пока не настраивается
+            r_tmp=sd_dircmp.report_full_closure_as_list()
+            r.left_only.extend(r_tmp.left_only.copy())
+            r.right_only.extend(r_tmp.right_only.copy())
+            r.diff_files.extend(r_tmp.diff_files.copy())
+        return r
