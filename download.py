@@ -132,6 +132,7 @@ def find_last_page() -> int:
     print("Downloading "+page_url+"...")
     session=requests.Session()
     session.cookies=get_cookies()
+    session.headers=s.user_agent
     page = session.get(page_url)# TODO: сделать обработку исключения и повторные попытки
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
@@ -157,6 +158,7 @@ def find_last_post() -> int:
     print("Downloading "+page_url+"...")
     session=requests.Session()
     session.cookies=get_cookies()
+    session.headers=s.user_agent
     page = session.get(page_url)#TODO: сделать трай эксепт с циклом
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
@@ -251,6 +253,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
             tries=0
             session=requests.Session()
             session.cookies=get_cookies()
+            session.headers=s.user_agent
 
             while tries<5:
                 try:
@@ -479,6 +482,7 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
     comments_n_actual=0
     session=requests.Session()
     session.cookies=get_cookies()
+    session.headers=s.user_agent
 
     for page in range(pages):
         url=f"https://{s.uname}.diary.ru/p{post_id}.htm?from={comments_on_page*page}"

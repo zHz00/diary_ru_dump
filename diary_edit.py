@@ -13,6 +13,7 @@ def check_session()->bool:
     url=f"https://{s.uname}.diary.ru/"
     session=requests.Session()
     session.cookies=download.get_cookies()
+    session.headers=s.user_agent
     res=session.get(url)
     if s.download_html:
         htmlfile_name=s.dump_folder+f"session.html"
@@ -31,6 +32,7 @@ def delete_comment(comment_id:int,post_id:int)->int:
     url=f"https://{s.uname}.diary.ru/p{post_id}.htm"
     session=requests.Session()
     session.cookies=download.get_cookies()
+    session.headers=s.user_agent
     res=session.get(url)#TODO: сделать обработку исключений
     if res.text.find("https://diary.ru/user/registration")!=-1:
         print("Probably, not logged in!")
