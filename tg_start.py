@@ -22,10 +22,12 @@ def post_to_tgph(post_id,img_list):
     for img in img_list:
         #pass
         if img[0].strip() in html_text:
-            uploaded=tg_ph.upload_image(s.base_folder+s.pics_folder+img[1])
-            uploaded_list.append([img[0],"https://telegra.ph"+uploaded])
+            #uploaded=tg_ph.upload_image(s.base_folder+s.pics_folder+img[1])
+            #uploaded_list.append([img[0],"https://telegra.ph"+uploaded])
+            #к сожалению, телегра.ф отключил загрузку картинок, поэтому придётся убирать
+            uploaded_list.append([img[0],img[0]])#просто повторяем урл, теперь будет хотлинкинг на имедж-хостинг
             #print("uploaded:"+uploaded)
-            time.sleep(s.wait_time)
+            #time.sleep(s.wait_time)
         else:
             print(img[0]+" not found in html, skipping")
     for img in uploaded_list:
@@ -41,6 +43,7 @@ def post_to_tgph(post_id,img_list):
     node_out=open(s.dump_folder+"p"+str(post_id)+"node.txt","r",encoding="utf-8")
     node_text=node_out.read()
     tg_ph.init(s.tg_ph_token)
+    print("telegra.ph connection initiated")
     return tg_ph.create_page(header,node_text)
     #return None
 
@@ -239,12 +242,13 @@ def main():
     db.connect()
 
     if md_post_len>s.tg_max_len or len(img_list)>s.tg_max_pics:
-        print("Posting to telegraph...")
+        print(f"Posting to telegraph... (Pause:{s.wait_time})")
         time.sleep(s.wait_time)
+        print("Pause ended")
         url=post_to_tgph(post_id,img_list)
         post_short_to_tgch(post_id,url)
     else:
-        print("Posting to channel...")
+        print(f"Posting to channel... (Pause:{s.wait_time})")
         time.sleep(s.wait_time)
         post_to_tgch(post_id,img_list,md_post_name)
 

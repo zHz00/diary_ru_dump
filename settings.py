@@ -124,7 +124,7 @@ post_encoding="utf-8"
 settings_file_encoding="utf-8"
 
 forbidden_pic_urls=["google.ru/search?q=","google.com/search?q=","chan.sankakustatic.com","img.rudepedexe1.com","img.totafofesos1.com"]
-user_agent = {'User-agent': 'Mozilla/5.0'}
+user_agent = {'User-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0 SeaMonkey/2.53.16'}#'Mozilla/5.0'}
 
 settings_file_name="username.txt"
 tokens_file_name="tokens.txt"
@@ -135,18 +135,22 @@ db_name="posts.db"
 
 def enter_username() -> None:
     uname_local=input("Please enter username:")
-    session_local=input("Please paste session ID, if diary has restricted access (otherwise press enter)")
+    cf_clearance_local=input("Please paste Cloudflare clearance from cookies (name: 'cf_clearance'):")
+    session_local=input("Please paste session ID from cookies (name:'_identity_'):")
     settings_file=open(settings_file_name,"w",encoding=settings_file_encoding)
     settings_file.write(uname_local)
     settings_file.write(session_local)
+    settings_file.write(cf_clearance_local)
     settings_file.close()
     load_username()
 
 def load_username(postfix:int="") -> None:
     global uname
     global session
+    global cf_clearance
     settings_file=open(settings_file_name,"r",encoding=settings_file_encoding)
     uname=settings_file.readline().strip()
+    cf_clearance=settings_file.readline().strip()
     session=settings_file.readline().strip()
     settings_file.close()
     change_username(postfix)
@@ -177,6 +181,7 @@ def change_username(postfix:str="") -> None:
     link_marks=[uname+"/p",uname+".diary.ru/p"]
     cross_link_checking=[uname+".diary.ru/","/~"+uname+"/"]
     saved_cookies['_identity_']=session
+    saved_cookies['cf_clearance']=cf_clearance
 
     if diary_url_mode==dum.one_post:
         base_folder="../"+uname+postfix+"_diary_obsidian/"
