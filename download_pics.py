@@ -93,6 +93,7 @@ def download_pics(post_id=-1) -> None:
     db.connect()
 
     placeholders=0
+    site_name="https://diary.space"
 
     if s.diary_url_mode==s.dum.one_post:
         pics_list_db=db.get_pics_list_plain(post_id)
@@ -177,6 +178,8 @@ def download_pics(post_id=-1) -> None:
                     write_placeholder(plc_type.DUMMY,pic_full_name)
                     placeholders+=1
             continue
+        if pic_url[0]=="/":#relative path
+            pic_url=site_name+pic_url
         l.info("[DB]Downloading "+pic_url+"...")
         print("[DB]Downloading "+pic_url+"...", end="")
 
@@ -184,7 +187,7 @@ def download_pics(post_id=-1) -> None:
             try:
                 pic=requests.get(pic_url,headers=s.user_agent)
             except Exception as e:
-                print(e.__cause__)
+                print("Cause: "+str(e))
                 write_placeholder(plc_type.DUMMY,s.base_folder+s.pics_folder+check_length(pic_name))
                 placeholders+=1
                 warning="[DB]Error during downloading ["+pic_url+"]! Skipping..."

@@ -194,7 +194,7 @@ def post_short_to_tgch(post_id,tgph_url):
 
     tags=db.get_post_tags(post_id)
     for tag in tags:
-        out_text+="#"+tag.replace(" ","\\_")#пробелов быть не должно
+        out_text+="#"+tag.replace(" ","\\_")+"\n"#пробелов быть не должно
 
     
     tgch_short_file=open(s.dump_folder+"short.txt","w",encoding="utf-8")

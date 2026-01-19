@@ -1,6 +1,8 @@
 import init
 import enum
-version=10
+version=11
+
+ignore_ssl=True
 
 uname="zHz00"
 session=""
@@ -57,10 +59,10 @@ def toggle_comments():
 
 
 #Тут надо придумать шаблон для поиска номеров постов. Если не знаете, что делать, замените "00" на необходимый ник.
-link_marks=["00/p","00.diary.ru/p"]
+link_marks=["00/p","00.diary.ru/p","00.diary.space/p"]
 
 #Аналогично, заменяем мой ник на необходимый.
-cross_link_checking=["zHz00.diary.ru/","/~zHz00/","zhz00.diary.ru/","/~zhz00/"]
+cross_link_checking=["zHz00.diary.ru/","/~zHz00/","zhz00.diary.ru/","/~zhz00/","zHz00.diary.space/","zhz00.diary.space/"]
 #Не трогать.
 pic_checking=[".jpg",".jpeg",".png",".gif"]
 
@@ -170,16 +172,18 @@ def load_tokens():
 
 def change_username(postfix:str="") -> None:
     global diary_url
+    global diary_url_pretty
     global diary_url_comments
     global link_marks
     global cross_link_checking
     global base_folder
     global dump_folder
     global links_style
-    diary_url='https://diary.ru/~'+uname+'?oam&rfrom='
-    diary_url_comments='https://diary.ru/~'+uname+'?sort=last_comment&rfrom='
-    link_marks=[uname+"/p",uname+".diary.ru/p"]
-    cross_link_checking=[uname+".diary.ru/","/~"+uname+"/"]
+    diary_url='https://diary.space/~'+uname+'?oam&rfrom='
+    diary_url_comments='https://diary.space/~'+uname+'?sort=last_comment&rfrom='
+    diary_url_pretty="https://"+uname+".diary.space/"
+    link_marks=[uname+"/p",uname+".diary.space/p"]
+    cross_link_checking=[uname+".diary.space/","/~"+uname+"/"]
     saved_cookies['_identity_']=session
     saved_cookies['cf_clearance']=cf_clearance
 

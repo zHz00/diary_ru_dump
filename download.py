@@ -17,11 +17,13 @@ def convert_to_old_style(url: str) -> str:
     #при сравнении дампов со старыми версиями гита
     #на входе: https://zhz00.diary.ru/pXXXX.htm
     #на выходе: https://diary.ru/~zHz00/pXXXX.htm
+    site_name="diary.space"
+    site_len=len("https://")+len(site_name)+len("/")
     cut_begin=8
-    cut_end=url.find(".diary.ru/")
+    cut_end=url.find("."+site_name+"/")
     uname=url[cut_begin:cut_end]
     out_str=url[:cut_begin]+url[cut_end+1:]
-    out_str=out_str[:17]+"~"+uname+"/"+out_str[17:]
+    out_str=out_str[:site_len]+"~"+uname+"/"+out_str[site_len:]
     return out_str
     
 
@@ -115,7 +117,7 @@ def convert_date_ru_to_iso(date:str)->str:
 def get_cookies() -> None:
     cookies=RequestsCookieJar()
     for c_name,c_value in s.saved_cookies.items():
-        cookie=requests.cookies.create_cookie(domain=".diary.ru",name=c_name,value=c_value)
+        cookie=requests.cookies.create_cookie(domain=".diary.space",name=c_name,value=c_value)
         cookies.set_cookie(cookie) 
     return cookies
 
@@ -133,7 +135,7 @@ def find_last_page() -> int:
     session=requests.Session()
     session.cookies=get_cookies()
     session.headers=s.user_agent
-    page = session.get(page_url)# TODO: сделать обработку исключения и повторные попытки
+    page = session.get(page_url,verify=not s.ignore_ssl)# TODO: сделать обработку исключения и повторные попытки
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
     for div in post_divs:
@@ -159,7 +161,7 @@ def find_last_post() -> int:
     session=requests.Session()
     session.cookies=get_cookies()
     session.headers=s.user_agent
-    page = session.get(page_url)#TODO: сделать трай эксепт с циклом
+    page = session.get(page_url,verify=not s.ignore_ssl)#TODO: сделать трай эксепт с циклом
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
     for div in post_divs:
@@ -257,7 +259,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
 
             while tries<5:
                 try:
-                    page = session.get(page_url)
+                    page = session.get(page_url,verify=not s.ignore_ssl)
                 except:
                     tries+=1
                     l.info("failed. tries="+str(tries))
@@ -485,12 +487,12 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
     session.headers=s.user_agent
 
     for page in range(pages):
-        url=f"https://{s.uname}.diary.ru/p{post_id}.htm?from={comments_on_page*page}"
+        url=f"https://{s.uname}.diary.space/p{post_id}.htm?from={comments_on_page*page}"
         urls.append(url)
 
         print(f"[{percentage}%, {left} posts left] Comments: {n}. Downloading "+url+"...")
         l.info(f"[{percentage}%, {left} posts left] Comments: {n}. Downloading "+url+"...")
-        page = session.get(url)
+        page = session.get(url,verify=not s.ignore_ssl)
         page = BeautifulSoup(change_pre(page.text), 'lxml')
             
         #c_ означает comment_. это сокращение

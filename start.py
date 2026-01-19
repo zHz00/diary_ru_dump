@@ -12,7 +12,7 @@ from create_indexes import create_indexes
 from update_times import update_times
 import settings as s
 
-hello_message=lambda:f'''diary.ru dump utility, version {s.version}.
+hello_message=lambda:f'''diary.ru (diary.space) dump utility, version {s.version}.
 (C) zHz, 2022-2024. Licenced under MIT license, see readme.txt for details.
 
 Diary dump consists of seven stages:
