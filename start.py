@@ -12,8 +12,8 @@ from create_indexes import create_indexes
 from update_times import update_times
 import settings as s
 
-hello_message=lambda:f'''diary.ru (diary.space) dump utility, version {s.version}.
-(C) zHz, 2022-2024. Licenced under MIT license, see readme.txt for details.
+hello_message=lambda:f'''diary.ru (diary.space, diarybackup.space) dump utility, version {s.version}.
+(C) zHz, 2022-2026. Licenced under MIT license, see readme.txt for details.
 
 Diary dump consists of seven stages:
 
@@ -98,6 +98,7 @@ continue_execution={
 print("test1")
 
 s.load_username()
+s.load_proxy()
 
 logger=l.getLogger()
 file_handler=l.FileHandler(filename=s.dump_folder+"py_log"+datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")+".log",mode="w",encoding="utf-8")

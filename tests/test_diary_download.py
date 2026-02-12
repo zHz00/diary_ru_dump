@@ -19,6 +19,7 @@ def test_download_with_comments(username_file:str,ignore_compare_errors:bool=Fal
 
     anon=(username_file.find("anon")!=-1)
     s.load_username(postfix="_a" if anon else "_i")
+    s.load_proxy()
     if anon:
         assert diary_edit.check_session() == False
     else:

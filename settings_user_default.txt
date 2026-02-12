@@ -1,0 +1,7 @@
+[TELEGRAM]
+tg_ph_token=
+tg_channel_token=
+tg_channel_name=
+[PROXY]
+ip=127.0.0.1
+port=6666

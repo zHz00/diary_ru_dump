@@ -230,7 +230,7 @@ def add_link(post_id,post_fname,dest_post_id,url):
     #UPD. И уже привело. Теперь при наличии строки я обновляю имя файла, потому что оно, вообще-то, могло измениться!
     #UPD2. оказалось что недостаточно текущих мер (проверки ИД и урла), т.к. при изменении имени поста изменяется и его урл!
     fetch=db_cursor.fetchall()
-    find_pattern="diary.space/"
+    find_pattern="diarybackup.space/"
     for link in fetch:
         dest_post_id_match=re.search("\\/p(\\d+)",link['URL'][link['URL'].find(find_pattern):])
         if dest_post_id_match is not None:

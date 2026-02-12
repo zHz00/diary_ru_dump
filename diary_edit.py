@@ -10,17 +10,18 @@ import db
 import download
 
 def check_session()->bool:
-    url=f"https://{s.uname}.diary.space/"
+    url=f"https://{s.uname}.diarybackup.space/"
     session=requests.Session()
     session.cookies=download.get_cookies()
     session.headers=s.user_agent
+    session.proxies=s.proxies()
     res=session.get(url)
     if s.download_html:
         htmlfile_name=s.dump_folder+f"session.html"
         htmlfile=open(htmlfile_name,"w",encoding=s.post_encoding)
         htmlfile.write(res.text)
         htmlfile.close()
-    if res.text.find("https://diary.space/user/logout")==-1:
+    if res.text.find("https://diarybackup.space/user/logout")==-1:
         print("Probably, not logged in! (check)")
         return False
     print("Session OK")
@@ -33,8 +34,9 @@ def delete_comment(comment_id:int,post_id:int)->int:
     session=requests.Session()
     session.cookies=download.get_cookies()
     session.headers=s.user_agent
+    session.proxies=s.proxies()
     res=session.get(url)#TODO: сделать обработку исключений
-    if res.text.find("https://diary.space/user/registration")!=-1:
+    if res.text.find("https://diarybackup.space/user/registration")!=-1:
         print("Probably, not logged in!")
         return 404
     page=BeautifulSoup(res.text,'lxml')
@@ -47,7 +49,7 @@ def delete_comment(comment_id:int,post_id:int)->int:
     html.write(res.text)
     html.close()
     headers={"X-CSRF-Token":token,"X-Requested-With":"XMLHttpRequest"}
-    url=f"https://{s.uname}.diary.space/?deletecomment&id={comment_id}"
+    url=f"https://{s.uname}.diarybackup.space/?deletecomment&id={comment_id}"
 
     
     time.sleep(5.0)
@@ -208,6 +210,7 @@ def detect_spam()->None:
 
 if __name__=="__main__":
     s.load_username()
+    s.load_proxy()
     if check_session()==False:
         quit(1)
     s.wait_time=10

@@ -12,3 +12,4 @@ click==8.1.7
 tqdm==4.66.1
 Pillow==9.4.0
 lxml==4.9.0
+PySocks==1.7.1

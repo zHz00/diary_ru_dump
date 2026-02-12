@@ -29,6 +29,8 @@ def create_folders() -> None:
     if(not Path(s.dump_folder+s.temp_md_folder+s.obsidian_settings_folder).is_dir()):
         os.makedirs(s.dump_folder+s.temp_md_folder+s.obsidian_settings_folder)
         shutil.copytree(s.obsidian_default_settings_folder,s.dump_folder+s.temp_md_folder,dirs_exist_ok=True)
+    if not Path(s.dump_folder+"settings.txt").is_file():
+        shutil.copy("settings_user_default.txt",s.dump_folder+"settings.txt")
 
 
 

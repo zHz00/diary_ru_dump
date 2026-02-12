@@ -11,6 +11,7 @@ import requests
 import settings as s
 import init
 import db
+import download
 
 class plc_type(enum.Enum):
     DUMMY=1
@@ -93,7 +94,7 @@ def download_pics(post_id=-1) -> None:
     db.connect()
 
     placeholders=0
-    site_name="https://diary.space"
+    site_name="https://diarybackup.space/"
 
     if s.diary_url_mode==s.dum.one_post:
         pics_list_db=db.get_pics_list_plain(post_id)
@@ -185,7 +186,11 @@ def download_pics(post_id=-1) -> None:
 
         if s.diary_url_mode!=s.dum.from_file:
             try:
-                pic=requests.get(pic_url,headers=s.user_agent)
+                session=requests.Session()
+                session.cookies=download.get_cookies()
+                session.headers=s.user_agent
+                session.proxies=s.proxies()
+                pic=session.get(pic_url)
             except Exception as e:
                 print("Cause: "+str(e))
                 write_placeholder(plc_type.DUMMY,s.base_folder+s.pics_folder+check_length(pic_name))

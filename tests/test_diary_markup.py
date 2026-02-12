@@ -30,6 +30,7 @@ def test_markup(username_file:str,pics_enabled:bool):
     postfix="_a" if anon else "_i"
     pics_postfix="" if pics_enabled else "_nopics"
     s.load_username(postfix=postfix)
+    s.load_proxy()
 
     logger=l.getLogger()
     while len(logger.handlers)>0:

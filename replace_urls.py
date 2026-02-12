@@ -110,7 +110,7 @@ def replace_urls() -> None:
                     post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",'('+link['SRC_URL']+')','('+(link['DEST_POST_FNAME'].replace(" ","%20"))+')')
 
             if link['SRC_DEST_POST_ID']==-1 and link['DEST_POST_FNAME'] is None:#если -1, то там обычный урл без номера, конечно он не будет найден
-                tag_substr=".diary.space/?tag="
+                tag_substr=".diarybackup.space/?tag="
                 start_idx=link['SRC_URL'].find(tag_substr)
                 if start_idx!=-1:
                     link_processed_flag=True
@@ -120,7 +120,7 @@ def replace_urls() -> None:
                     dest_tag_fname=s.tags_folder+convert_tag_to_safe(tag_str)+".md"
                     l.info(f"Replacing {link['SRC_URL']} to tag {dest_tag_fname}")
                     post_replace(s.base_folder+link["SRC_POST_FNAME"]+".md",'('+link['SRC_URL']+')','('+(dest_tag_fname.replace(" ","%20"))+')')
-                tag_substr=".diary.space/?tags="
+                tag_substr=".diarybackup.space/?tags="
                 start_idx=link['SRC_URL'].find(tag_substr)
                 if start_idx!=-1:
                     l.info(f"Replacing {link['SRC_URL']} to tags list")

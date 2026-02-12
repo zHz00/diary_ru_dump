@@ -17,7 +17,7 @@ def convert_to_old_style(url: str) -> str:
     #при сравнении дампов со старыми версиями гита
     #на входе: https://zhz00.diary.ru/pXXXX.htm
     #на выходе: https://diary.ru/~zHz00/pXXXX.htm
-    site_name="diary.space"
+    site_name="diarybackup.space"
     site_len=len("https://")+len(site_name)+len("/")
     cut_begin=8
     cut_end=url.find("."+site_name+"/")
@@ -117,7 +117,7 @@ def convert_date_ru_to_iso(date:str)->str:
 def get_cookies() -> None:
     cookies=RequestsCookieJar()
     for c_name,c_value in s.saved_cookies.items():
-        cookie=requests.cookies.create_cookie(domain=".diary.space",name=c_name,value=c_value)
+        cookie=requests.cookies.create_cookie(domain=".diarybackup.space",name=c_name,value=c_value)
         cookies.set_cookie(cookie) 
     return cookies
 
@@ -135,6 +135,7 @@ def find_last_page() -> int:
     session=requests.Session()
     session.cookies=get_cookies()
     session.headers=s.user_agent
+    session.proxies=s.proxies()
     page = session.get(page_url,verify=not s.ignore_ssl)# TODO: сделать обработку исключения и повторные попытки
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
@@ -161,6 +162,7 @@ def find_last_post() -> int:
     session=requests.Session()
     session.cookies=get_cookies()
     session.headers=s.user_agent
+    session.proxies=s.proxies()
     page = session.get(page_url,verify=not s.ignore_ssl)#TODO: сделать трай эксепт с циклом
     page = BeautifulSoup(page.text, 'lxml')
     post_divs=page.find_all("div")
@@ -256,6 +258,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
             session=requests.Session()
             session.cookies=get_cookies()
             session.headers=s.user_agent
+            session.proxies=s.proxies()
 
             while tries<5:
                 try:
@@ -298,6 +301,8 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
         #нам надо пропустить все дивы эпиграфа
         posts_divs=page.find_all("div")
         for div in posts_divs:
+            if div.decomposed==True:#удалили "перейти к записи"
+                continue
             if div.has_attr("class") and len(div["class"])>0:
                 class_name=div["class"][0]
                 if len(div["class"])>1:
@@ -348,7 +353,7 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                                 break
                             #запись не закрыта по новому дизайну, у неё действительно есть заголовок. ищем его
                             if len(a_tag.contents)>0:
-                                posts_titles.append(a_tag.contents[0])
+                                posts_titles.append(a_tag.contents[0].strip())
                             else:
                                 posts_titles.append("(no title)")
                             break
@@ -386,6 +391,15 @@ def download(update: bool,auto_find: bool,post_id:int=0) -> None:
                 if class_name == "postInner":
                     posts_contents.append(remove_newlines_ex(div.div.div))
                 if class_name == "post-inner":
+                    for a in div.find_all("a"):
+                        if "class" in a.attrs:
+                            if "btn" in a.attrs["class"] and "btn-link" in a.attrs["class"]:
+                                p=a.parent
+                                if "style" in p.attrs and ("margin-top:8px;" in p.attrs["style"]):#надо проверить, что у нас правильный див
+                                    p.decompose()#удалить ненужный "перейти к записи"
+                                else:
+                                    l.info(f"Warning! Unusual parent in btn btn-link!")
+
                     posts_contents.append(remove_newlines_ex(div))
                 test_name="postContent"
                 if class_name == test_name:
@@ -485,9 +499,10 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
     session=requests.Session()
     session.cookies=get_cookies()
     session.headers=s.user_agent
+    session.proxies=s.proxies()
 
     for page in range(pages):
-        url=f"https://{s.uname}.diary.space/p{post_id}.htm?from={comments_on_page*page}"
+        url=f"https://{s.uname}.diarybackup.space/p{post_id}.htm?from={comments_on_page*page}"
         urls.append(url)
 
         print(f"[{percentage}%, {left} posts left] Comments: {n}. Downloading "+url+"...")
@@ -528,7 +543,7 @@ def download_comments_from_post(post_id:int,n:int,percentage:int,left:int):
                     else:
                         c_author.append(div.a.strong.contents[0])
                 if "post-header" in class_names or (("header" in class_names) and ("singleComment" in div.parent["class"])):
-                    dt=div.span.contents[0]
+                    dt=div.span.contents[0].strip()
                     if len(dt)>10:#у стартового поста только время, а это всего 5 символов, так что если больше 10, то это комментарий
                         c_date.append(convert_date_ru_to_iso(dt[:10]))
                         c_time.append(dt[13:])

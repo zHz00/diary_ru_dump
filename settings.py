@@ -1,8 +1,28 @@
 import init
 import enum
-version=11
+import configparser
+version=13
 
-ignore_ssl=True
+ignore_ssl=False
+proxy_ip=""
+proxy_port=""
+proxy_user=""
+proxy_pass=""
+
+def proxies():
+    url="socks5://"
+    if len(proxy_user)>0:
+        url+=proxy_user
+    if len(proxy_pass)>0:
+        url+=":"+proxy_pass+"@"
+    else:
+        if len(proxy_user)>0:
+            url+="@"
+    url+=proxy_ip+":"+proxy_port
+    if len(proxy_ip)>0:
+        return dict(http=url,https=url)
+    else:
+        return dict()
 
 uname="zHz00"
 session=""
@@ -59,10 +79,10 @@ def toggle_comments():
 
 
 #Тут надо придумать шаблон для поиска номеров постов. Если не знаете, что делать, замените "00" на необходимый ник.
-link_marks=["00/p","00.diary.ru/p","00.diary.space/p"]
+link_marks=["00/p","00.diary.ru/p","00.diarybackup.space/p"]
 
 #Аналогично, заменяем мой ник на необходимый.
-cross_link_checking=["zHz00.diary.ru/","/~zHz00/","zhz00.diary.ru/","/~zhz00/","zHz00.diary.space/","zhz00.diary.space/"]
+cross_link_checking=["zHz00.diary.ru/","/~zHz00/","zhz00.diary.ru/","/~zhz00/","zHz00.diarybackup.space/","zhz00.diarybackup.space/"]
 #Не трогать.
 pic_checking=[".jpg",".jpeg",".png",".gif"]
 
@@ -82,7 +102,7 @@ start=20
 stop=3860
 
 #На ваш выбор.
-wait_time=60 #sec
+wait_time=20 #sec
 
 #Тут надо задать название блокнота для Obsidian
 base_folder="../zhz00_diary_obsidian/"
@@ -137,38 +157,64 @@ db_name="posts.db"
 
 def enter_username() -> None:
     uname_local=input("Please enter username:")
-    cf_clearance_local=input("Please paste Cloudflare clearance from cookies (name: 'cf_clearance'):")
-    session_local=input("Please paste session ID from cookies (name:'_identity_'):")
-    settings_file=open(settings_file_name,"w",encoding=settings_file_encoding)
-    settings_file.write(uname_local)
-    settings_file.write(session_local)
-    settings_file.write(cf_clearance_local)
-    settings_file.close()
+    cf_clearance_local=input("Please paste Cloudflare clearance from cookies (name: 'cf_clearance', Enter if absent):")
+    session_local=input("Please paste session ID from cookies (name:'_identity'):")
+    c=configparser.ConfigParser()
+    c.read("settings.ini",encoding="utf-8")
+    #settings_file=open(settings_file_name,"w",encoding=settings_file_encoding)
+    #settings_file.write(uname_local)
+    #settings_file.write(session_local)
+    #settings_file.write(cf_clearance_local)
+    #settings_file.close()
+    c["COMMON"]["username"]=uname_local
+    c["COMMON"]["cf_clearance"]=cf_clearance_local.replace("%","%%")
+    c["COMMON"]["session"]=session_local.replace("%","%%")
+    
+    c.write(open("settings.ini","w",encoding="utf-8"))
     load_username()
+    load_proxy()
 
 def load_username(postfix:int="") -> None:
     global uname
     global session
     global cf_clearance
-    settings_file=open(settings_file_name,"r",encoding=settings_file_encoding)
-    uname=settings_file.readline().strip()
-    cf_clearance=settings_file.readline().strip()
-    session=settings_file.readline().strip()
-    settings_file.close()
+    #settings_file=open(settings_file_name,"r",encoding=settings_file_encoding)
+    #uname=settings_file.readline().strip()
+    #cf_clearance=settings_file.readline().strip()
+    #session=settings_file.readline().strip()
+    #settings_file.close()
+    c=configparser.ConfigParser()
+    c.read("settings.ini",encoding="utf-8")
+    uname=c["COMMON"]["username"]
+    cf_clearance=c["COMMON"]["cf_clearance"]
+    session=c["COMMON"]["session"]
     change_username(postfix)
+
     
 def load_tokens():
     global tg_ph_token
     global tg_channel_token
     global tg_channel_name
-    tokens_file=open(dump_folder+tokens_file_name,"r",encoding=settings_file_encoding)
-    tg_ph_token=tokens_file.readline().strip()
-    tg_channel_token=tokens_file.readline().strip()
-    tg_channel_name=tokens_file.readline().strip()
+    #tokens_file=open(dump_folder+tokens_file_name,"r",encoding=settings_file_encoding)
+    #tg_ph_token=tokens_file.readline().strip()
+    #tg_channel_token=tokens_file.readline().strip()
+    #tg_channel_name=tokens_file.readline().strip()
+    c=configparser.ConfigParser()
+    c.read(dump_folder+"settings.ini",encoding="utf-8")
+    tg_ph_token=c["TELEGRAM"]["tg_ph_token"]
+    tg_channel_token=c["TELEGRAM"]["tg_channel_token"]
+    tg_channel_name=c["TELEGRAM"]["tg_channel_name"]
     print("Len of telegraph token: "+str(len(tg_ph_token)))
     print("Len of bot token: "+str(len(tg_channel_token)))
     print("Loaded channel name: "+tg_channel_name)
 
+def load_proxy():
+    global proxy_ip
+    global proxy_port
+    c=configparser.ConfigParser()
+    c.read(dump_folder+"settings.txt",encoding="utf-8")
+    proxy_ip=c["PROXY"]["ip"]
+    proxy_port=c["PROXY"]["port"]
 
 def change_username(postfix:str="") -> None:
     global diary_url
@@ -179,12 +225,12 @@ def change_username(postfix:str="") -> None:
     global base_folder
     global dump_folder
     global links_style
-    diary_url='https://diary.space/~'+uname+'?oam&rfrom='
-    diary_url_comments='https://diary.space/~'+uname+'?sort=last_comment&rfrom='
-    diary_url_pretty="https://"+uname+".diary.space/"
-    link_marks=[uname+"/p",uname+".diary.space/p"]
-    cross_link_checking=[uname+".diary.space/","/~"+uname+"/"]
-    saved_cookies['_identity_']=session
+    diary_url='https://diarybackup.space/~'+uname+'?oam&rfrom='
+    diary_url_comments='https://diarybackup.space/~'+uname+'?sort=last_comment&rfrom='
+    diary_url_pretty="https://"+uname+".diarybackup.space/"
+    link_marks=[uname+"/p",uname+".diarybackup.space/p"]
+    cross_link_checking=[uname+".diarybackup.space/","/~"+uname+"/"]
+    saved_cookies['_identity']=session
     saved_cookies['cf_clearance']=cf_clearance
 
     if diary_url_mode==dum.one_post:
